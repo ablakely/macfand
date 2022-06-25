@@ -12,6 +12,9 @@
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
+ *
+ *  Updated for controlling 4 fans on intel mac pros
+ *  Copyright (C) 2022 Aaron Blakely <aaron@ephasic.org>
  */
 
 #include <stdio.h>
@@ -52,7 +55,39 @@ sensor_desc[] =
 	{"TN0D", "MCP Die"},
 	{"Th2H", "Right Fin Stack Proximity Temp"},
 	{"Tm0P", "Battery Charger Proximity Temp"},
-	{"Ts0P", "Palm Rest Temp"}
+	{"Ts0P", "Palm Rest Temp"},
+	{"TA0P", "Airflow 1"},
+	{"TC0C", "CPU 0 Die Core Temp - Digital"},
+	{"TC1C", "CPU Core 1"},
+	{"TC2C", "CPU Core 2"},
+	{"TC3C", "CPU Core 3"},
+	{"TCAH", "CPU 1 Heatsink Alt."},
+	{"TCBH", "CPU 2 Heatsink Alt."},
+	{"TH0P", "HDD Bay 1"},
+	{"TH1P", "HDD Bay 2"},
+	{"TH2P", "HDD Bay 3"},
+	{"TH3P", "HDD Bay 4"},
+	{"THTG", "???"},
+	{"TM0P", "Memory Bank A1"},
+	{"TM0S", "Memory Module A1"},
+	{"TM1P", "Memory Bank A2"},
+	{"TM1S", "Memory Module A1"},
+	{"TM2P", "???"},
+	{"TM2S", "???"},
+	{"TM3S", "???"},
+	{"TM8P", "Memory Bank B1"},
+	{"TM8S", "Memory Module B1"},
+	{"TM9P", "Memory Bank B2"},
+	{"TM9S", "Memory Module B2"},
+	{"TMAP", "???"},
+	{"TMAS", "???"},
+	{"TMBS", "???"},
+	{"TN0H", "MCH Heatsink"},
+	{"TS0C", "Expansion Slots"},
+	{"Tp0C", "Power Supply 1 Alt."},
+	{"Tp1C", "Power Supply 2 Alt."},
+	{"Tv0S", "???"},
+	{"Tv1S", "???"},
 };
 #define N_DESC			(sizeof(sensor_desc) / sizeof(sensor_desc[0]))
 
@@ -72,8 +107,13 @@ struct sensor
 char base_path[PATH_MAX];
 char fan1_min[PATH_MAX];
 char fan2_min[PATH_MAX];
+char fan3_min[PATH_MAX];
+char fan4_min[PATH_MAX];
+
 char fan1_man[PATH_MAX];
 char fan2_man[PATH_MAX];
+char fan3_man[PATH_MAX];
+char fan4_man[PATH_MAX];
 
 int sensor_count = 0;
 int fan_count = 0;
@@ -163,10 +203,15 @@ void find_applesmc()
 		exit(-1);
 	}
 
-	sprintf(fan1_min, "%s/fan1_min", base_path);
-	sprintf(fan2_min, "%s/fan2_min", base_path);
+	sprintf(fan1_min, "%s/fan1_output", base_path);
+	sprintf(fan2_min, "%s/fan2_output", base_path);
+	sprintf(fan3_min, "%s/fan3_output", base_path);
+	sprintf(fan4_min, "%s/fan4_output", base_path);
+
 	sprintf(fan1_man, "%s/fan1_manual", base_path);
 	sprintf(fan2_man, "%s/fan2_manual", base_path);
+	sprintf(fan3_man, "%s/fan3_manual", base_path);
+	sprintf(fan4_man, "%s/fan4_manual", base_path);
 
 	printf("Found applesmc at %s\n", base_path);
 }
@@ -339,6 +384,54 @@ void set_fan()
 		}
 	}
 
+	// update fan 3
+
+	if (fan_count > 2)
+	{
+		fd = open(fan3_min, O_WRONLY);
+		if (fd < 0)
+		{
+			printf("Error: Can't open %s\n", fan3_min);
+		}
+		else
+		{
+			sprintf(buf, "%d", fan_speed);
+			write(fd, buf, strlen(buf));
+			close(fd);
+		}
+
+		// set fan 3 manual to zero
+
+		fd = open(fan3_man, O_WRONLY);
+		if (fd < 0)
+		{
+			printf("Error: Can't open %s\n", fan3_man);
+		}
+		else
+		{
+			strcpy(buf, "0");
+			write(fd, buf, strlen(buf));
+			close(fd);
+		}
+	}
+
+	// update fan 4
+
+	if (fan_count > 3)
+	{
+		fd = open(fan4_min, O_WRONLY);
+		if (fd < 0)
+		{
+			printf("Error: Can't open %s\n", fan4_min);
+		}
+		else
+		{
+			sprintf(buf, "%d", fan_speed);
+			write(fd, buf, strlen(buf));
+			close(fd);
+		}
+	}
+
 	fflush(stdout);
 }
 
@@ -379,13 +472,37 @@ void scan_sensors()
 	result = stat(fan2_min, &buf);
 	if(result != 0)
 	{
-		printf("Found 1 fan.\n");
+		printf("Found 1 fan [CPU_MEM]");
 	}
 	else
 	{
 		fan_count = 2;
-		printf("Found 2 fans.\n");
+		printf("\rFound 2 fans [CPU_MEM, EXPANSION]");
 	}
+
+	result = stat(fan3_min, &buf);
+	if (result != 0)
+	{
+		printf("\rFound 2 fans [CPU_MEM, EXPANSION]");
+	}
+	else
+	{
+		fan_count = 3;
+		printf("\rFound 3 fans [CPU_MEM, EXPANSION, EXHAUST]");
+	}
+
+	result = stat(fan4_min, &buf);
+	if (result != 0)
+	{
+		printf("\rFound 3 fans [CPU_MEM, EXPANSION, EXHAUST]");
+	}
+	else
+	{
+		fan_count = 4;
+		printf("\rFound 4 fans [CPU_MEM, EXPANSION, EXHAUST, POWER_SUPPLY]");
+	}
+
+	printf("\n");
 
 	// count number of sensors
 

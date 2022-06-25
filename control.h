@@ -12,6 +12,9 @@
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
+ *
+ *  Updated for controlling 4 fans on intel mac pros
+ *  Copyright (C) 2022 Aaron Blakely <aaron@ephasic.org>
  */
 
 #ifndef CONTROL_H_
