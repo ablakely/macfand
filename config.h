@@ -12,6 +12,9 @@
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
+ *
+ *  macprofanctld - Mac Fan Control Daemon
+ *  Copyright (C) 2022 Aaron Blakely <aaron@ephasic.org>
  */
 
 #ifndef CONFIG_H_
