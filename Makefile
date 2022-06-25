@@ -8,8 +8,9 @@
 
 CC = gcc
 CFLAGS = -Wall
-SBIN_DIR = $(DESTDIR)/usr/sbin
-ETC_DIR = $(DESTDIR)/etc
+SBIN_DIR = /usr/sbin
+ETC_DIR = /etc
+UNIT_DIR = /usr/lib/systemd/system
 
 all: macprofanctld
 
@@ -22,11 +23,11 @@ clean:
 	rm -rf *.o macprofanctld
 
 install:
-	dh_installdirs
 	chmod +x macprofanctld
 	cp macprofanctld $(SBIN_DIR)
 	cp macprofanctl.conf $(ETC_DIR)
+	cp macprofanctld.service $(UNIT_DIR)
 
 uninstall:
-	rm $(SBIN_DIR)/macprofanctld $(INITD_DIR)/macprofanctl $(ETC_DIR)/macprofanctl.conf
+	rm $(SBIN_DIR)/macprofanctld $(INITD_DIR)/macprofanctl $(ETC_DIR)/macprofanctl.conf $(UNIT_DIR)/macprofanctld.service
 
