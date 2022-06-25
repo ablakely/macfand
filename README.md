@@ -27,4 +27,6 @@ macbooks are currently untested but should function, will be testing with a mid-
 See the manual page `macprofanctld(1)` for more information.
 
 Copyright &copy; 2022 Aaron Blakely
+
+
 Support for this software is available on IRC irc.ephasic.org in #macprofanctld
