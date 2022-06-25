@@ -23,11 +23,16 @@ extern float temp_avg_ceiling;
 extern float temp_TC0P_floor;
 extern float temp_TC0P_ceiling;
 
-extern float temp_TG0P_floor;
-extern float temp_TG0P_ceiling;
+extern float temp_TM0P_floor;
+extern float temp_TM0P_ceiling;
 
 extern float fan_min;
 extern float fan_max;
+
+extern float cpumem_min;
+extern float expansion_min;
+extern float exhaust_min;
+extern float ps_min;
 
 extern int log_level;
 

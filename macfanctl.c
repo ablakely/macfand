@@ -114,8 +114,10 @@ void daemonize()
 
 void usage()
 {
-	printf("usage: macfanctld [-f]\n");
+	printf("usage: macprofanctld [-f]\n");
 	printf("  -f  run in foregound\n");
+	printf("  -h  prints this message\n");
+	printf("\nmacprofanctld v0.5: Mac Pro fan control daemon based on macfanctrld by Mikael Strom\nCopyright 2022 (C) Aaron Blakely <aaron@ephasic.org>\n");
 	exit(-1);
 }
 
@@ -140,6 +142,10 @@ int main(int argc, char *argv[])
 		if(strcmp(argv[i], "-f") == 0)
 		{
 			daemon = 0;
+		}
+		else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
+		{
+			usage();
 		}
 		else
 		{

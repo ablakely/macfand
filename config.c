@@ -30,11 +30,16 @@ float temp_avg_ceiling = 50;
 float temp_TC0P_floor = 40;
 float temp_TC0P_ceiling = 50;
 
-float temp_TG0P_floor = 40;
-float temp_TG0P_ceiling = 50;
+float temp_TM0P_floor = 40;
+float temp_TM0P_ceiling = 50;
 
 float fan_min = 0;
-float fan_max = 6200;			// fixed max value
+float fan_max = 2900;			// fixed max value
+
+float cpumem_min = 0;
+float expansion_min = 0;
+float exhaust_min = 0;
+float ps_min = 0;
 
 int log_level = 0;
 
@@ -237,10 +242,15 @@ void read_cfg(char* name)
 		temp_TC0P_ceiling = read_param("temp_TC0P_ceiling",	0, 90, 65);
 		temp_TC0P_floor = read_param("temp_TC0P_floor",		0, temp_TC0P_ceiling - 1, 50);
 
-		temp_TG0P_ceiling = read_param("temp_TG0P_ceiling",	0, 90, 80);
-		temp_TG0P_floor = read_param("temp_TG0P_floor",		0, temp_TG0P_ceiling - 1, 65);
+		temp_TM0P_ceiling = read_param("temp_TM0P_ceiling",	0, 90, 80);
+		temp_TM0P_floor = read_param("temp_TM0P_floor",		0, temp_TM0P_ceiling - 1, 65);
 
 		fan_min = read_param("fan_min", 0, 6200, 0);
+
+		cpumem_min = read_param("cpumem_min", 0, 2900, 1500);
+		expansion_min = read_param("expansion_min", 0, 2900, 1900);
+		exhaust_min = read_param("exhaust_min", 0, 2900, 1250);
+		ps_min = read_param("ps_min", 0, 2800, 950);
 
 		log_level = read_param("log_level", 0, 2, 0);
 		
@@ -261,10 +271,14 @@ void read_cfg(char* name)
 	printf("\ttemp_TC0P_floor: %.0f\n", temp_TC0P_floor);
 	printf("\ttemp_TC0P_ceiling: %.0f\n", temp_TC0P_ceiling);
 
-	printf("\ttemp_TG0P_floor: %.0f\n", temp_TG0P_floor);
-	printf("\ttemp_TG0P_ceiling: %.0f\n", temp_TG0P_ceiling);
+	printf("\ttemp_TM0P_floor: %.0f\n", temp_TM0P_floor);
+	printf("\ttemp_TM0P_ceiling: %.0f\n", temp_TM0P_ceiling);
 
 	printf("\tfan_min: %.0f\n", fan_min);
+	printf("\tcpumem_min: %.0f\n", cpumem_min);
+	printf("\texpansion_min: %.0f\n", expansion_min);
+	printf("\texhaust_min: %.0f\n", exhaust_min);
+	printf("\tps_min: %.0f\n", ps_min);
 
 	if(exclude[0] != 0)
 	{
