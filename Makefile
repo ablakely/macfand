@@ -1,9 +1,9 @@
 #
 # Makefile for macprofanctl
 #
-# Mikael Strom, August 2010
-# 
-# Updated for Mac Pro(1,1) Support
+# Origin: macfanctld Mikael Strom, August 2010
+#
+# macprofanctld
 # Aaron Blakely, June 2022
 
 CC = gcc
@@ -14,8 +14,8 @@ UNIT_DIR = /usr/lib/systemd/system
 
 all: macprofanctld
 
-macprofanctld: macfanctl.c control.c config.c control.h config.h
-	$(CC) $(CFLAGS) macfanctl.c control.c config.c -o macprofanctld 
+macprofanctld: macprofanctl.c control.c config.c control.h config.h
+	$(CC) $(CFLAGS) macprofanctl.c control.c config.c -o macprofanctld 
 
 clean:
 	dh_testdir
