@@ -34,9 +34,9 @@
 
 //------------------------------------------------------------------------------
 
-#define PID_FILE	"/var/run/macfanctld.pid"
-#define LOG_FILE	"/var/log/macfanctl.log"
-#define CFG_FILE	"/etc/macfanctl.conf"
+#define PID_FILE	"/var/run/macprofanctld.pid"
+#define LOG_FILE	"/var/log/macprofanctl.log"
+#define CFG_FILE	"/etc/macprofanctl.conf"
 
 int running = 1;
 int lock_fd = -1;
