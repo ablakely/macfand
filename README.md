@@ -4,7 +4,9 @@ Fan control daemon based on the abandoned macfanctld
 ## Installing
     make
     sudo make install
-
+    
+    # Edit /etc/macprofanctld.conf
+    
     sudo systemctl enable --now macprofanctld
 
 
