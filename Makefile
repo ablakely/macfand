@@ -6,11 +6,14 @@
 # macfand
 # Aaron Blakely, June 2022
 
+VERSION = 1.0.0
+
+PREFIX = /usr/local
+MANPREFIX = $(PREFIX)/share/man
+
 CC = gcc
 CFLAGS = -Wall
-SBIN_DIR = /usr/bin
 ETC_DIR = /etc
-UNIT_DIR = /usr/lib/systemd/system
 
 all: macfand
 
@@ -23,12 +26,13 @@ clean:
 	rm -rf *.o macfand
 
 install:
-	chmod +x macfand
-	cp macfand $(SBIN_DIR)
-	cp macfand.conf $(ETC_DIR)
-	cp macfand.service $(UNIT_DIR)
-	cp macfand.1 /usr/share/man/man1/
-	mandb
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	cp macfand $(DESTDIR)$($PREFIX)/bin/
+	chmod 755 $(DESTDIR)$(PREFIX)/bin/macfand
+	mkdir -p $(DESTDIR)$(MANPREFIX)/man1
+	sed "s/VERSION/$(VERSION)/g" < macfand.1 > $(DESTDIR)($MANPREFIX)/man1/macfand.1
+	chmod 644 $(DESTDIR)($MANPREFIX)/man1/macfand.1
+
 
 	@echo "Done!"
 	@echo " "
@@ -36,5 +40,7 @@ install:
 	@echo "   sudo systemctl enable --now macfand"
 
 uninstall:
-	rm $(SBIN_DIR)/macfand $(INITD_DIR)/macfan $(ETC_DIR)/macfan.conf $(UNIT_DIR)/macfand.service
+	rm -f $(DESTDIR)$(PREFIX)/macfand
+	$(ETC_DIR)/macfan.conf
 
+.PHONY: all clean install uninstall

@@ -2,7 +2,7 @@
 #
 # Maintainer: Aaron Blakely <aaron@ephasic.org>
 pkgname=macfand-git
-pkgver=1.0.0.r25.c8517a8
+pkgver=1.0.0.r26.50a269a
 pkgrel=1
 epoch=
 pkgdesc="Mac fan control daemon"
@@ -38,8 +38,11 @@ build() {
 
 package() {
 	cd macfand
-	sudo make install
+	mkdir -p ${pkgdir}/opt/${pkgname}
+	cp -rf * ${pkgdir}/opt/${pkgname}
+	make PREFIX=/usr DESTDIR="${pkgdir}" install
 	install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
 	install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
-	install -Dm644 macfand.1 "${pkgdir}/usr/share/man/man1/{$pkgname}/macfand.1"
+	install -Dm644 macfand.1 "${pkgdir}/usr/share/man/man1/${pkgname}/macfand.1"
+	install -Dm644 macfand.service "${pkgdir}/usr/lib/systemd/system/${pkgname}/macfand.serice"
 }
