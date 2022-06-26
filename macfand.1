@@ -1,10 +1,8 @@
-.TH macfand 1 "June 25, 2022" "Version 0.5" "USER COMMANDS"
+.TH macfand 1 "June 25, 2022" "Version 1.0.0" "USER COMMANDS"
 .SH NAME
 macfand \- Fan control for Mac Computers
 .SH SYNOPSIS
 .B macfand
-.SH VERSION
-1.0.0
 [\-f]
 .SH DESCRIPTION
 macfand is a daemon that reads temperature sensors and adjust the fan(s) speed on Mac Pros. macfand is configurable and logs temp and fan data to a file. macfand uses three sources to determine the fan speeed: 1) average temperature from all sensors, 2) sensor TC0P [CPU 0 Proximity Temp and 3] and sensor TM0P [Memory Proximity Temp]. Each source's impact on fan speed can be individually adjusted to fine tune working temperature on different Mac Pros.
