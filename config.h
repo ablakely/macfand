@@ -13,7 +13,7 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  macprofanctld - Mac Fan Control Daemon
+ *  macfand - Mac Fan Control Daemon
  *  Copyright (C) 2022 Aaron Blakely <aaron@ephasic.org>
  */
 

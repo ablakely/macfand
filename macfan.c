@@ -34,9 +34,9 @@
 
 //------------------------------------------------------------------------------
 
-#define PID_FILE	"/var/run/macprofanctld.pid"
-#define LOG_FILE	"/var/log/macprofanctl.log"
-#define CFG_FILE	"/etc/macprofanctl.conf"
+#define PID_FILE	"/var/run/macfand.pid"
+#define LOG_FILE	"/var/log/macfand.log"
+#define CFG_FILE	"/etc/macfand.conf"
 
 int running = 1;
 int lock_fd = -1;
@@ -114,10 +114,10 @@ void daemonize()
 
 void usage()
 {
-	printf("usage: macprofanctld [-f]\n");
+	printf("usage: macfand [-f]\n");
 	printf("  -f  run in foregound\n");
 	printf("  -h  prints this message\n");
-	printf("\nmacprofanctld v0.5: Mac Pro fan control daemon based on macfanctrld by Mikael Strom\nCopyright 2022 (C) Aaron Blakely <aaron@ephasic.org>\n");
+	printf("\nmacfand v0.5: Mac fan control daemon\nCopyright 2022 (C) Aaron Blakely <aaron@ephasic.org>\n");
 	exit(-1);
 }
 

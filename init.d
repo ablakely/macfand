@@ -10,7 +10,7 @@
 ### END INIT INFO
 
 DESC="Start the macfanctl daemon"
-NAME=macprofanctld
+NAME=macfand
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DAEMON=/usr/sbin/$NAME
 PIDFILE=/var/run/$NAME.pid

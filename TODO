@@ -1,3 +1,9 @@
+# from a long time ago...
 - A gui would be nice.
+----------------------------------
 
-
+TODO:
+    - New config file format
+        - add machine identifier
+    - More sensor descriptions
+    - Run modes (quiet, moderate, full)
