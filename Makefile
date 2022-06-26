@@ -25,8 +25,15 @@ clean:
 install:
 	chmod +x macfand
 	cp macfand $(SBIN_DIR)
-	cp macfan.conf $(ETC_DIR)
+	cp macfand.conf $(ETC_DIR)
 	cp macfand.service $(UNIT_DIR)
+	cp macfand.1 /usr/share/man/man1/
+	mandb
+
+	@echo "Done!"
+	@echo " "
+	@echo "Be sure to enable macfand with systemd. This can be done with:"
+	@echo "   sudo systemctl enable --now macfand"
 
 uninstall:
 	rm $(SBIN_DIR)/macfand $(INITD_DIR)/macfan $(ETC_DIR)/macfan.conf $(UNIT_DIR)/macfand.service

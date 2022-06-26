@@ -1,5 +1,5 @@
 [Unit]
-Description=Mac Pro Fan Control Daemon
+Description=Mac Fan Control Daemon
 Documentation=man:macfand(1)
 
 [Service]
