@@ -9,6 +9,8 @@ Fan control daemon based on the abandoned macfanctld
     
     sudo systemctl enable --now macfand
 
+macfand is available in the [Arch User Repository](https://aur.archlinux.org/packages/macfand-git)
+
 
 ## Compatibility
 
