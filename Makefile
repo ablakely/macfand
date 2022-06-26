@@ -8,7 +8,7 @@
 
 CC = gcc
 CFLAGS = -Wall
-SBIN_DIR = /usr/sbin
+SBIN_DIR = /usr/bin
 ETC_DIR = /etc
 UNIT_DIR = /usr/lib/systemd/system
 
