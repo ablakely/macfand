@@ -30,7 +30,7 @@ install:
 	cp macfand $(DESTDIR)$($PREFIX)/bin/
 	chmod 755 $(DESTDIR)$(PREFIX)/bin/macfand
 	mkdir -p $(DESTDIR)$(MANPREFIX)/man1
-	sed "s/VERSION/$(VERSION)/g" < macfand.1 > $(DESTDIR)($MANPREFIX)/man1/macfand.1
+	sed "s/MFDVERSION/$(VERSION)/g" < macfand.1 > $(DESTDIR)($MANPREFIX)/man1/macfand.1
 	chmod 644 $(DESTDIR)($MANPREFIX)/man1/macfand.1
 
 
