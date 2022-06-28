@@ -27,6 +27,8 @@
 
 static FILE *fp;
 
+
+
 float temp_avg_floor = 40;		// default values if no config file is found
 float temp_avg_ceiling = 50;
 

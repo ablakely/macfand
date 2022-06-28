@@ -41,6 +41,7 @@
 int running = 1;
 int lock_fd = -1;
 int reload = 0;
+struct mfdconfig config; 
 
 //------------------------------------------------------------------------------
 
@@ -164,7 +165,7 @@ int main(int argc, char *argv[])
 
 	// main loop
 
-	read_cfg(CFG_FILE);
+	config = read_cfg(CFG_FILE);
 
 	find_applesmc();
 	scan_sensors();
@@ -178,7 +179,7 @@ int main(int argc, char *argv[])
 
 		if(reload)
 		{
-			read_cfg(CFG_FILE);
+			config = read_cfg(CFG_FILE);
 			scan_sensors();
 			reload = 0;
 		}

@@ -87,22 +87,27 @@ struct sensor
 	float value;
 };
 
+struct fanStruct
+{
+	int id;
+	bool fanManualMode;
+	char rname[PATH_MAX];
+	char sensors[50][SENSKEY_MAXLEN];
+	char fan_out_path[PATH_MAX];
+	char fan_man_path[PATH_MAX];
+	int minSpeed;
+	int maxSpeed;
+	int speed;
+};
 
+struct fanStruct *fans = (struct fans*)malloc(MAXFANS*sizeof(struct fanStruct));
 
 char base_path[PATH_MAX];
-char fan1_min[PATH_MAX];
-char fan2_min[PATH_MAX];
-char fan3_min[PATH_MAX];
-char fan4_min[PATH_MAX];
-
-char fan1_man[PATH_MAX];
-char fan2_man[PATH_MAX];
-char fan3_man[PATH_MAX];
-char fan4_man[PATH_MAX];
 
 int sensor_count = 0;
 int fan_count = 0;
 float temp_avg = 0;
+int fans;
 
 int fan1_speed;
 int fan2_speed;
@@ -119,90 +124,6 @@ struct sensor *sensor_TM0P = NULL;
 #define CTL_TM0P	3
 
 int fan_ctl = 0;		// which sensor controls fan
-
-
-void find_applesmc()
-{
-	DIR *fd_dir;
-	int ret;
-
-	base_path[0] = 0;
-
-	// find and verify applesmc path in /sys/devices
-
-	fd_dir = opendir(HWMON_DIR);
-
-	if(fd_dir != NULL)
-	{
-		struct dirent *dir_entry;
-
-		while((dir_entry = readdir(fd_dir)) != NULL && base_path[0] == 0)
-		{
-			if(dir_entry->d_name[0] != '.')
-			{
-				char name_path[PATH_MAX];
-				int fd_name;
-
-				sprintf(name_path, "%s/%s/device/name", HWMON_DIR, dir_entry->d_name);
-
-				fd_name = open(name_path, O_RDONLY);
-
-				if(fd_name > -1)
-				{
-					char name[sizeof(APPLESMC_ID)];
-
-					ret = read(fd_name, name, sizeof(APPLESMC_ID) - 1);
-
-					close(fd_name);
-
-					if(ret == sizeof(APPLESMC_ID) - 1)
-					{
-						if(strncmp(name, APPLESMC_ID, sizeof(APPLESMC_ID) - 1) == 0)
-						{
-							char *dev_path;
-							char *last_slash = strrchr(name_path, '/');
-
-							if(last_slash != NULL)
-							{
-								*last_slash = 0;
-
-								dev_path = realpath(name_path, NULL);
-
-								if(dev_path != NULL)
-								{
-									strncpy(base_path, dev_path, sizeof(base_path) - 1);
-									base_path[sizeof(base_path) - 1] = 0;
-									free(dev_path);
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		closedir(fd_dir);
-	}
-
-	// create paths to fan and sensor
-
-	if(base_path[0] == 0)
-	{
-		printf("Error: Can't find a applesmc device\n");
-		exit(-1);
-	}
-
-	sprintf(fan1_min, "%s/fan1_output", base_path);
-	sprintf(fan2_min, "%s/fan2_output", base_path);
-	sprintf(fan3_min, "%s/fan3_output", base_path);
-	sprintf(fan4_min, "%s/fan4_output", base_path);
-
-	sprintf(fan1_man, "%s/fan1_manual", base_path);
-	sprintf(fan2_man, "%s/fan2_manual", base_path);
-	sprintf(fan3_man, "%s/fan3_manual", base_path);
-	sprintf(fan4_man, "%s/fan4_manual", base_path);
-
-	printf("Found applesmc at %s\n", base_path);
-}
 
 //------------------------------------------------------------------------------
 
@@ -430,112 +351,14 @@ void calc_fan()
 void set_fan()
 {
 	char buf[16];
+	int fd;
+	int speed;
 
-	// update fan 1 [CPU_MEM]
-
-	int fd = open(fan1_min, O_WRONLY);
-	if(fd < 0)
+	for (int i = 0; i < fans; i++)
 	{
-		printf("Error: Can't open %s\n", fan1_min);
-	}
-	else
-	{
-		sprintf(buf, "%d", fan1_speed);
-		write(fd, buf, strlen(buf));
-		close(fd);
-	}
+		if (i == 0) { speed =}
 
-	// set fan 1 manual to zero
-
-	fd = open(fan1_man, O_WRONLY);
-	if(fd < 0)
-	{
-		printf("Error: Can't open %s\n", fan1_man);
-	}
-	else
-	{
-		strcpy(buf, "0");
-		write(fd, buf, strlen(buf));
-		close(fd);
-	}
-
-	// update fan 2
-
-	if(fan_count > 1)
-	{
-		fd = open(fan2_min, O_WRONLY);
-		if(fd < 0)
-		{
-			printf("Error: Can't open %s\n", fan2_min);
-		}
-		else
-		{
-			sprintf(buf, "%d", fan2_speed);
-			write(fd, buf, strlen(buf));
-			close(fd);
-		}
-
-		// set fan 2 manual to zero
-
-		fd = open(fan2_man, O_WRONLY);
-		if(fd < 0)
-		{
-			printf("Error: Can't open %s\n", fan2_man);
-		}
-		else
-		{
-			strcpy(buf, "0");
-			write(fd, buf, strlen(buf));
-			close(fd);
-		}
-	}
-
-	// update fan 3
-
-	if (fan_count > 2)
-	{
-		fd = open(fan3_min, O_WRONLY);
-		if (fd < 0)
-		{
-			printf("Error: Can't open %s\n", fan3_min);
-		}
-		else
-		{
-			sprintf(buf, "%d", fan3_speed);
-			write(fd, buf, strlen(buf));
-			close(fd);
-		}
-
-		// set fan 3 manual to zero
-
-		fd = open(fan3_man, O_WRONLY);
-		if (fd < 0)
-		{
-			printf("Error: Can't open %s\n", fan3_man);
-		}
-		else
-		{
-			strcpy(buf, "0");
-			write(fd, buf, strlen(buf));
-			close(fd);
-		}
-	}
-
-	// update fan 4
-
-	if (fan_count > 3)
-	{
-		fd = open(fan4_min, O_WRONLY);
-		if (fd < 0)
-		{
-			printf("Error: Can't open %s\n", fan4_min);
-		}
-		else
-		{
-			sprintf(buf, "%d", fan4_speed);
-			write(fd, buf, strlen(buf));
-			close(fd);
-		}
+		printf("Set fan %d [%s] to %d rpm\n", i+1, fan_out_path[i], )
 	}
 
 	fflush(stdout);
@@ -552,206 +375,6 @@ void adjust()
 
 //------------------------------------------------------------------------------
 
-void scan_sensors()
-{
-	int i;
-	int j;
-	struct stat buf;
-	int result;
-
-	sensor_TC0P = NULL;
-	sensor_TM0P = NULL;
-
-	// get number of fans
-
-	result = stat(fan1_min, &buf);
-	if(result != 0)
-	{
-		printf("No fans detected, terminating!\n");
-		exit(-1);
-	}
-	else
-	{
-		fan_count = 1;
-	}
-
-	result = stat(fan2_min, &buf);
-	if(result != 0)
-	{
-		printf("Found 1 fan [CPU_MEM]");
-	}
-	else
-	{
-		fan_count = 2;
-		printf("\rFound 2 fans [CPU_MEM, EXPANSION]");
-	}
-
-	result = stat(fan3_min, &buf);
-	if (result != 0)
-	{
-		printf("\rFound 2 fans [CPU_MEM, EXPANSION]");
-	}
-	else
-	{
-		fan_count = 3;
-		printf("\rFound 3 fans [CPU_MEM, EXPANSION, EXHAUST]");
-	}
-
-	result = stat(fan4_min, &buf);
-	if (result != 0)
-	{
-		printf("\rFound 3 fans [CPU_MEM, EXPANSION, EXHAUST]");
-	}
-	else
-	{
-		fan_count = 4;
-		printf("\rFound 4 fans [CPU_MEM, EXPANSION, EXHAUST, POWER_SUPPLY]");
-	}
-
-	printf("\n");
-
-	// count number of sensors
-
-	int count = 0;
-	while(count < 100)	// more than 100 sensors is an error!
-	{
-		char fname[512];
-
-		// sensor numbering start at 1
-		sprintf(fname, "%s/temp%d_input", base_path, count + 1);
-		result = stat(fname, &buf);
-
-		if(result == 0)
-		{
-			++count;
-		}
-		else
-		{
-			break;		// done
-		}
-	}
-
-	sensor_count = count;
-
-	if(sensor_count > 0)
-	{
-		// Get sensor id, labels and descriptions, check exclude list
-
-		if(sensors != NULL)
-		{
-			free(sensors);
-		}
-
-		sensors = malloc(sizeof(struct sensor) * sensor_count);
-		assert(sensors != NULL);
-
-		printf("Found %d sensors:\n", sensor_count);
-
-		for(i = 0; i < sensor_count; ++i)
-		{
-			char fname[512];
-
-			// set id, check exclude list and save file name
-			sensors[i].id = i + 1;
-			sensors[i].excluded = 0;
-			sprintf(sensors[i].fname, "%s/temp%d_input", base_path, sensors[i].id);
-
-			for(j = 0; j < MAX_EXCLUDE && exclude[j] != 0; ++j)
-			{
-				if(exclude[j] == sensors[i].id)
-				{
-					sensors[i].excluded = 1;
-					break;
-				}
-			}
-
-			// read label
-			sprintf(fname, "%s/temp%d_label", base_path, sensors[i].id);
-
-			sensors[i].name[0] = 0; // set zero length
-
-			FILE *fp = fopen(fname, "r");
-			if(fp == NULL)
-			{
-				printf("Error: Can't open %s\n", fname);
-			}
-			else
-			{
-				char key_buf[SENSKEY_MAXLEN];
-				memset(key_buf, 0, SENSKEY_MAXLEN);
-
-				int n = fread(key_buf, 1, SENSKEY_MAXLEN - 1, fp);
-				if(n < 1)
-				{
-					printf("Error: Can't read  %s\n", fname);
-				}
-				else
-				{
-					char *p_endl = strrchr(key_buf, '\n');
-					if(p_endl)
-					{
-						*p_endl = 0; 	// remove '\n'
-					}
-					strncpy(sensors[i].name, key_buf, SENSKEY_MAXLEN);
-				}
-				fclose(fp);
-			}
-		}
-
-		for(i = 0; i < sensor_count; ++i)		// for each label found
-		{
-			if(! sensors[i].excluded)
-			{
-				// try to find TC0P and TM0P
-				// if found, assign sensor_TC0P and sensor_TM0P for later use
-
-				if(strcmp(sensors[i].name, "TC0P") == 0)
-				{
-					sensor_TC0P = &sensors[i];
-					if (sensor_TC0P->value <= 0.0 && sensor_TC0P->value != 0.0)
-					{
-						sensor_TC0P->value *= -1;
-					}
-				}
-				else if(strcmp(sensors[i].name, "TM0P") == 0)
-				{
-					sensor_TM0P = &sensors[i];
-					if (sensor_TM0P->value <= 0.0 && sensor_TM0P->value != 0.0)
-					{
-						sensor_TM0P->value *= -1;
-					}
-				}
-			}
-
-			// print out sensor information.
-
-			printf("\t%2d: ", sensors[i].id);
-
-			int found = 0;
-			for(j = 0; j < N_DESC && ! found; ++j)		// find in descriptions table
-			{
-				if(strcmp(sensors[i].name, sensor_desc[j].key) == 0)
-				{
-					found = 1;
-					printf("%s - %s", sensor_desc[j].key, sensor_desc[j].desc);
-				}
-			}
-			if(! found)
-			{
-				printf("%s - ?", sensors[i].name);
-			}
-
-			printf(" %s\n", sensors[i].excluded ? "   ***EXCLUDED***" : "");
-		}
-	}
-	else
-	{
-		printf("No sensors detected, terminating!\n");
-		exit(-1);
-	}
-
-	fflush(stdout);
-}
 
 //------------------------------------------------------------------------------
 

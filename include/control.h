@@ -1,5 +1,5 @@
 /*
- *  config.h -  Fan control daemon for MacBook
+ *  control.h -  Fan control daemon for MacBook
  *
  *  Copyright (C) 2010  Mikael Strom <mikael@sesamiq.com>
  *
@@ -17,34 +17,14 @@
  *  Copyright (C) 2022 Aaron Blakely <aaron@ephasic.org>
  */
 
-#ifndef CONFIG_H_
-#define CONFIG_H_
+#ifndef CONTROL_H_
+#define CONTROL_H_
 
-extern float temp_avg_floor;
-extern float temp_avg_ceiling;
+#include "config.h"
+#include "applesmc.h"
 
-extern float temp_TC0P_floor;
-extern float temp_TC0P_ceiling;
+void adjust(struct applesmc *smc, struct mfdconfig *cfg);
+void calc_fan(struct applesmc *smc, struct mfdconfig *cfg);
+void set_fan(struct applesmc *smc, struct mfdconfig *cfg);
 
-extern float temp_TM0P_floor;
-extern float temp_TM0P_ceiling;
-
-extern float fan_min;
-extern float fan_max;
-
-extern float cpumem_min;
-extern float expansion_min;
-extern float exhaust_min;
-extern float ps_min;
-
-extern int log_level;
-
-void read_cfg(char* name);
-
-#define MAX_EXCLUDE		20
-extern int exclude[MAX_EXCLUDE];	// array of sensors to exclude
-
-#define max(a,b)	(a > b ? a : b)
-#define min(a,b)	(a < b ? a : b)
-
-#endif /* CONFIG_H_ */
+#endif /* CONTROL_H_ */
