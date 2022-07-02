@@ -23,8 +23,8 @@
 #include "config.h"
 #include "applesmc.h"
 
-void adjust(struct applesmc *smc, struct mfdconfig *cfg);
-void calc_fan(struct applesmc *smc, struct mfdconfig *cfg);
-void set_fan(struct applesmc *smc, struct mfdconfig *cfg);
+void adjust(struct applesmc *smc, struct mfdconfig cfg);
+void calc_fan(struct applesmc *smc, struct mfdconfig cfg);
+void set_fan(struct applesmc *smc, struct mfdconfig cfg);
 
 #endif /* CONTROL_H_ */

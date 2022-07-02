@@ -23,19 +23,23 @@
 
 struct fan_ctrl
 {
-    int *num;
+    int num;
     char **sensors;
-    int *floor;
-    int *ceiling;
+    int floor;
+    int ceiling;
+    int use_avgctrl;
+    int active;
+    int min_speed;
+    int max_speed;
+    int sensor_cnt;
 };
 
 struct mfdconfig
 {
     char   *modelID;
-    int    *log_level;
-	int    *fan_min[MAXFANS];
-    int    *temp_avg_floor;
-    int    *temp_avg_ceiling;
+    int    log_level;
+    int    temp_avg_floor;
+    int    temp_avg_ceiling;
     bool   use_avgctrl;
     char   blacklist[MAX_EXCLUDE][SENSKEY_MAXLEN];
     struct fan_ctrl fanctrl[MAXFANS];
@@ -46,21 +50,21 @@ struct modelProfile
 {
     struct sensor_desc
     {
-        char id[SENSKEY_MAXLEN];
-        char desc[150];
+        char *id;
+        char *desc;
     } sensordesc[50];
 
     struct fan_desc
     {
-        int num;
-        char desc[150];
+        int  num;
+        char *desc;
     } fandesc[MAXFANS];
 
     struct fan_ctrl fanctrl[MAXFANS];
     struct mfdconfig *defaultcfg;
 };
 
-struct mfdconfig *read_cfg(char *file);
-struct modelProfile *read_profile(char *modelID);
+struct mfdconfig read_cfg(struct mfdconfig config, char *file);
+struct modelProfile *read_profile(struct mfdconfig inscfg, char *modelID);
 
 #endif /* CONFIG_H_ */

@@ -14,6 +14,7 @@
 
 void strlcpy(char *to, const char *from, int len)
 {
+    //from[len-1] = '\0';
     memccpy(to, from, '\0', len);
     to[len-1] = '\0';
 }

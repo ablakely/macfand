@@ -31,16 +31,14 @@ int lock_fd = -1;
 int reload  = 0;
 
 
-struct mfdconfig *cfg;
+struct mfdconfig cf;
+struct modelProfile *profile;
 struct applesmc *smc;
 
 void init()
 {
-    cfg = malloc(sizeof(struct mfdconfig));
-    cfg->profile = malloc(sizeof(struct modelProfile));
-    //cfg->modelID = malloc(sizeof(char*) * 32);
-
-    smc = malloc(sizeof(struct applesmc));
+    cf.modelID = malloc(sizeof(char*) *32);
+    smc = calloc(1, sizeof(struct applesmc *));
 }
 
 
@@ -114,43 +112,56 @@ int main(int argc, char *argv[])
         }
     }
 
+    int targetlen, j;
+
     if (daemon) daemonize();
 
-    cfg = read_cfg(CFG_FILE);
-    printf("Loading profile for model: %s\n", cfg->modelID);
+    cf = read_cfg(cf, CFG_FILE);
+    printf("Loading profile for model: %s\n", cf.modelID);
+    cf.profile = read_profile(cf, cf.modelID);
+    smc->defaults = cf.profile->defaultcfg;
 
-    cfg->profile = read_profile(cfg->modelID);
+    printf("dbug: temp_avg_floor = %d\n", cf.profile->defaultcfg->temp_avg_floor);
 
-    printf("dbug: temp_avg_floor = %d\n", cfg->profile->defaultcfg->temp_avg_floor);
-
-    smc = find_applesmc();
-    scan_sensors(smc, cfg);
+    find_applesmc(smc);
+    scan_sensors(smc, cf);
 
     printf("dbug: fanslen = %d, sensorlen = %d\n", smc->fan_cnt, smc->sensor_cnt);
 
-    printf("dbug: fan0target0 = %d\n", cfg->profile->fanctrl[0].floor);
+    printf("dbug: fan0target0 = %s\n", cf.profile->fanctrl[0].sensors[0]);
 
     for (i = 0; i < smc->fan_cnt; i++)
     {
         if (smc->fans[i].id != 0)
         {
-            printf("dbug: found fan #%d in smc: %s [%s]\n", i+1, cfg->profile->fandesc[i].desc, smc->fans[i].out_path);
+            printf("dbug: found fan #%d in smc: %s [%s]\n", i+1, cf.profile->fandesc[i].desc, smc->fans[i].out_path);
+            printf("dbug: Fan %d targets:\n\t", i+1);
+
+            for (j = 0; j < MAX_TARGETS; j++)
+            {
+                if (cf.profile->fanctrl[i].sensors[j] != "\0")
+                {
+                    printf(" %s", cf.profile->fanctrl[i].sensors[j]);
+                }
+            }
+
+            printf("\n");
         }
     }
 
     running = 1;
     while(running)
     {
-        //adjust(smc, cfg);
-        //logger(smc, cfg);
+        adjust(smc, cf);
+        //logger(smc, cf);
 
         if (reload)
         {
             printf("Reloading...\n");
-            cfg = read_cfg(CFG_FILE);
-            cfg->profile = read_profile(cfg->modelID);
+            cf = read_cfg(cf, CFG_FILE);
+            cf.profile = read_profile(cf, cf.modelID);
 
-            scan_sensors(smc, cfg);
+            scan_sensors(smc, cf);
             reload = 0;
         }
 

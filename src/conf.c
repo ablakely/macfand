@@ -1,5 +1,5 @@
 /*
- * config.c - Configuration File Parser
+ * config->c - Configuration File Parser
  *
  * macfand - Fan control daemon for Apple Computers
  * Written by Aaron Blakely <aaron@ephasic.org>
@@ -17,61 +17,60 @@
 #include <dirent.h>
 #include <assert.h>
 #include <unistd.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <math.h>
 
+#include "util.h"
 #include "config.h"
 #include "control.h"
 
-struct mfdconfig *read_cfg(char *file)
+struct mfdconfig read_cfg(struct mfdconfig config, char *file)
 {
-    struct mfdconfig config, *retconfig;
-    //config.modelID = malloc(sizeof(char*) * 32);
-
-    //config.fanctrl = malloc(MAX_EXCLUDE * sizeof(struct fan_ctrl));
-
     int count, n, minspeed, n2, count2;
-    config_t cfg;
-    config_setting_t *fan_ctrl, *fan_min, *blacklist, *fansensors;
+    config_t cfg, *cf;
+    config_setting_t *fan_ctrl, *blacklist, *fansensors;
 
-    char *sensor = NULL;
-    char *base = (const char *)malloc(sizeof(char *) * 1024);
+    const char *sensor = NULL;
+    const char *base = (const char *)malloc(sizeof(char *) * 1024);
     
-    int intbase;
-    bool boolbase;
+    cf = &cfg;
 
-    config_init(&cfg);
 
-    if (!config_read_file(&cfg, file))
+    int intbase, boolbase;
+
+    config_init(cf);
+
+    if (!config_read_file(cf, file))
     {
         printf("[macfand.conf:%d] Configuration file error: %s\n",
-            config_error_line(&cfg),
-            config_error_text(&cfg)
+            config_error_line(cf),
+            config_error_text(cf)
         );
 
-        config_destroy(&cfg);
+        config_destroy(cf);
         exit(-1);
     }
 
-    if (config_lookup_string(&cfg, "config.modelID", &base))
+    if (config_lookup_string(cf, "config.modelID", &base))
     {
-        config.modelID = malloc(sizeof(char) * 32);
-        strlcpy(config.modelID, base, 32);
+        //config.modelID = malloc(strlen(base)+1);
+        strlcpy(config.modelID, base, strlen(base)+1);
     }
-        //strlcpy(config.modelID, base, 32);
 
-    if (config_lookup_int(&cfg, "config.log_level", &intbase))
+    if (config_lookup_int(cf, "config.log_level", &intbase))
         config.log_level = intbase;
 
-    if (config_lookup_int(&cfg, "config.temp_avg_floor", &intbase))
+    if (config_lookup_int(cf, "config.temp_avg_floor", &intbase))
         config.temp_avg_floor = intbase;
 
-    if (config_lookup_int(&cfg, "config.temp_avg_ceiling", &intbase))
+    if (config_lookup_int(cf, "config.temp_avg_ceiling", &intbase))
         config.temp_avg_ceiling = intbase;
 
-    if (config_lookup_bool(&cfg, "config.use_avgctrl", &boolbase))
+    if (config_lookup_bool(cf, "config.use_avgctrl", &boolbase))
         config.use_avgctrl = boolbase;
     
-    blacklist = config_lookup(&cfg, "config.blacklist");
+    blacklist = config_lookup(cf, "config.blacklist");
     if (blacklist != NULL)
     {
         count     = config_setting_length(blacklist);
@@ -83,19 +82,7 @@ struct mfdconfig *read_cfg(char *file)
         }
     }
 
-    fan_min = config_lookup(&cfg, "config.fan_min");
-    if (fan_min != NULL)
-    {
-        count   = config_setting_length(fan_min);
-
-        for (n = 0; n < count; n++)
-        {
-            minspeed = config_setting_get_int_elem(fan_min, n);
-            config.fan_min[n] = minspeed;
-        }
-    }
-
-    fan_ctrl = config_lookup(&cfg, "config.fan_ctrl");
+    fan_ctrl = config_lookup(cf, "config.fan_ctrl");
     if (fan_ctrl != NULL)
     {
         count    = config_setting_length(fan_ctrl);
@@ -103,6 +90,8 @@ struct mfdconfig *read_cfg(char *file)
         for (n = 0; n < count; n++)
         {
             config_setting_t *fanc = config_setting_get_elem(fan_ctrl, n);
+            //config.fanctrl[n] = malloc(sizeof(struct fan_ctrl));
+
 
             if (config_setting_lookup_int(fanc, "floor", &intbase))
                 config.fanctrl[n].floor = intbase;
@@ -110,45 +99,74 @@ struct mfdconfig *read_cfg(char *file)
             if (config_setting_lookup_int(fanc, "ceiling", &intbase))
                 config.fanctrl[n].ceiling = intbase;
 
-            fansensors = config_lookup(fanc, "fan_sensors");
-            count2     = config_setting_length(fansensors);
+            if (config_setting_lookup_int(fanc, "min_speed", &intbase))
+                config.fanctrl[n].min_speed = intbase;
+            
+            if (config_setting_lookup_int(fanc, "max_speed", &intbase))
+                config.fanctrl[n].max_speed = intbase;
 
-            for (n2 = 0; n2 < count; n2++)
+            if (config_setting_lookup_bool(fanc, "use_avg", &boolbase))
             {
-                sensor = config_setting_get_string_elem(fansensors, n2);
-                strlcpy(config.fanctrl[n].sensors[n2], sensor, SENSKEY_MAXLEN);
+                config.fanctrl[n].use_avgctrl = boolbase;
+                printf("dbug: enabling avg_control for fan%d\n", n+1);
+            }
+
+            fansensors = config_setting_get_member(fanc, "fan_sensors");
+            if (fansensors != NULL)
+            {
+                config.fanctrl[n].sensor_cnt = config_setting_length(fansensors);
+
+                for (n2 = 0; n2 < config.fanctrl[n].sensor_cnt; n2++)
+                {
+                    sensor = config_setting_get_string_elem(fansensors, n2);
+                    if (sensor != NULL)
+                    {
+                        strlcpy(config.fanctrl[n].sensors[n2], sensor, SENSKEY_MAXLEN);
+                    }
+                }
             }
         }
     }
 
-    config_destroy(&cfg);
+    config_destroy(cf);
     //retconfig = malloc(sizeof(config));
-    retconfig = &config;
-    return &config;
+    //confp = &config;
+    return config;
 };
 
-struct modelProfile *read_profile(char *modelID)
+struct modelProfile *read_profile(struct mfdconfig inscfg, char *modelID)
 {
-    struct modelProfile profile, *pf;
+    struct mfdconfig defcfg_, *defcfg;
+    defcfg = malloc(sizeof(struct mfdconfig));
+    defcfg = &defcfg_;
 
-    pf = malloc(sizeof(struct modelProfile));
-    profile.defaultcfg = malloc(sizeof(struct mfdconfig));
+    struct modelProfile *tmpprofile = calloc(1, sizeof(struct modelProfile));
+    tmpprofile->defaultcfg = calloc(1, sizeof(struct mfdconfig));
 
-    pf = &profile;
+    int count, n = 0, k, v, n2, x;
 
-    int count, n = 0, k, v, count2, n2;
+    for (n = 0; n < 50; n++)
+    {
+        tmpprofile->sensordesc[n].id = calloc(SENSKEY_MAXLEN, sizeof(char));
+        tmpprofile->sensordesc[n].desc = calloc(500, sizeof(char));
+    }
+
+    for (n = 0; n < MAXFANS; n++)
+    {
+        tmpprofile->sensordesc[n].desc = calloc(500, sizeof(char));
+    }
+
 
     char profilepath[PATH_MAX];
 
     sprintf(profilepath, "%s/%s.conf", MACHINESDIR, modelID);
     printf("dbug: opening profile %s\n", profilepath);
 
-    bool boolbase;
     config_t cfg;
     config_setting_t *setting;
-    const config_setting_t *fan_ctrl, *fan_min, *blacklist, *fansensors, *minspeed;
+    const config_setting_t *fan_ctrl, *blacklist, *fansensors, *minspeed;
     
-    const int intbase = malloc(sizeof(int));
+    int  intbase, boolbase;
     const char *base = (const char*)malloc(sizeof(char *) * 1024);
     const char *key;
     const char *sensor = NULL;
@@ -178,21 +196,19 @@ struct modelProfile *read_profile(char *modelID)
 
             if (config_setting_lookup_string(sensor_desc, "sensor", &key))
             {
-                strlcpy(profile.sensordesc[i].id, key, SENSKEY_MAXLEN);
-                //printf("dbug:  key = %s\n", key);
+                strlcpy(tmpprofile->sensordesc[i].id, key, SENSKEY_MAXLEN);
             }
 
             if (config_setting_lookup_string(sensor_desc, "value", &base))
             {
-                strlcpy(profile.sensordesc[i].desc, base, 50);
-                //printf("dbug:  value = %s\n", base);
+                strlcpy(tmpprofile->sensordesc[i].desc, base, strlen(base)+1);
             }
         }
     }
     else
     {
-        printf("error: profile missing profile.sensor_desc array\n");
-        return;
+        printf("error: profile missing tmpprofile->sensor_desc array\n");
+        return NULL;
     }
 
 
@@ -210,33 +226,28 @@ struct modelProfile *read_profile(char *modelID)
 
             if (config_setting_lookup_int(fan_desc, "num", &intbase))
             {
-                profile.fandesc[i].num = intbase;
-                //printf("dbug: num = %d\n", intbase);
+                tmpprofile->fandesc[i].num = intbase;
             }
 
             if (config_setting_lookup_string(fan_desc, "value", &base))
             {
-                strlcpy(profile.fandesc[i].desc, base, 50);
-                //printf("dbug: value = %s\n", base);
+                tmpprofile->fandesc[i].desc = malloc(sizeof(char*)*50);
+                strlcpy(tmpprofile->fandesc[i].desc, base, strlen(base)+1);
             }
         }
     }
     else
     {
-        printf("error: profile missing profile.fan_desc array\n");
-        return;
+        printf("error: profile missing tmpprofile->fan_desc array\n");
+        return NULL;
     }
 
-    
-
     if (config_lookup_int(&cfg, "presets.temp_avg_floor", &intbase))
-        profile.defaultcfg->temp_avg_floor = intbase;
+        defcfg->temp_avg_floor = intbase;
 
     if (config_lookup_int(&cfg, "presets.temp_avg_ceiling", &intbase))
-        profile.defaultcfg->temp_avg_ceiling = intbase;
+        defcfg->temp_avg_ceiling = intbase;
 
-    if (config_lookup_bool(&cfg, "presets.use_avgctrl", &boolbase))
-        profile.defaultcfg->use_avgctrl = boolbase;
     
     blacklist = config_lookup(&cfg, "presets.blacklist");
     if (blacklist != NULL)
@@ -246,21 +257,21 @@ struct modelProfile *read_profile(char *modelID)
         for (n = 0; n < count; n++)
         {
             sensor = config_setting_get_string_elem(blacklist, n);
-            strlcpy(profile.defaultcfg->blacklist[n], sensor, SENSKEY_MAXLEN);
+            strlcpy(defcfg->blacklist[n], sensor, SENSKEY_MAXLEN);
         }
     }
 
-    fan_min = config_lookup(&cfg, "presets.fan_min");
-    if (fan_min != NULL)
+    struct fan_ctrl fcp[MAXFANS];
+
+    for (x = 0; x < MAXFANS; x++)
     {
-        count   = config_setting_length(fan_min);
-
-        for (n = 0; n < count; n++)
+        fcp[x].sensors = calloc(MAX_TARGETS, sizeof(char *));
+        for (n = 0; n < MAX_TARGETS; n++)
         {
-            minspeed = config_setting_get_int_elem(fan_min, n);
-            profile.defaultcfg->fan_min[n] = minspeed;
+            fcp[x].sensors[n] = calloc(SENSKEY_MAXLEN, sizeof(char));
         }
     }
+
 
     fan_ctrl = config_lookup(&cfg, "presets.fan_ctrl");
     if (fan_ctrl != NULL)
@@ -270,41 +281,48 @@ struct modelProfile *read_profile(char *modelID)
         for (n = 0; n < count; n++)
         {
             config_setting_t *fanc = config_setting_get_elem(fan_ctrl, n);
+            fcp[n].active = 1;
 
             if (config_setting_lookup_int(fanc, "floor", &intbase))
-            {
-                pf->fanctrl[n].floor = intbase;
-                pf->defaultcfg->fanctrl[n].floor = intbase;
-                printf("floor = %d\n", pf->defaultcfg->fanctrl[n].floor);
-            }
+                fcp[n].floor = intbase;
 
             if (config_setting_lookup_int(fanc, "ceiling", &intbase))
-                pf->fanctrl[n].ceiling = intbase;
+                fcp[n].ceiling = intbase;
+
+            if (config_setting_lookup_int(fanc, "min_speed", &intbase))
+                fcp[n].min_speed = intbase;
+
+            if (config_setting_lookup_int(fanc, "max_speed", &intbase))
+                fcp[n].max_speed = intbase;
+
+            if (config_setting_lookup_bool(fanc, "use_avg", &boolbase))
+                fcp[n].use_avgctrl = boolbase;
 
             fansensors = config_setting_get_member(fanc, "fan_sensors");
             if (fansensors != NULL)
             {
-                count2     = config_setting_length(fansensors);
-                //profile.fanctrl[n].sensors = malloc(sizeof(char*) * MAX_EXCLUDE);
+                fcp[n].sensor_cnt     = config_setting_length(fansensors);
 
-                for (n2 = 0; n2 < count; n2++)
+                for (n2 = 0; n2 < fcp[n].sensor_cnt; n2++)
                 {
                     sensor = config_setting_get_string_elem(fansensors, n2);
                     if (sensor != NULL)
                     {
-                        profile.fanctrl[n].sensors = malloc(sizeof(char*) * MAX_EXCLUDE);
-
-
-                        strlcpy(profile.fanctrl[n].sensors[n2], sensor, SENSKEY_MAXLEN);
-                        printf("dbug: fan%d sensor%d = %s\n", n, n2, profile.fanctrl[n].sensors[n2]);
+                        strlcpy(fcp[n].sensors[n2], sensor, SENSKEY_MAXLEN);
                     }
                 }
             }
         }
+
+        for (x = 0; x < MAXFANS; x++)
+        {
+            tmpprofile->fanctrl[x] = fcp[x];
+        }
     }
 
     config_destroy(&cfg);
+    tmpprofile->defaultcfg = defcfg;
+    inscfg.profile = tmpprofile;
 
-    pf = &profile;
-    return pf;
+    return inscfg.profile;
 }

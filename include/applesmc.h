@@ -26,6 +26,7 @@ struct fan
     char out_path[PATH_MAX];
     char manual_path[PATH_MAX];
     int  speed;
+    float sensor_avg;
 };
 
 struct applesmc
@@ -38,11 +39,12 @@ struct applesmc
     
     struct sensor *sensors;
     struct fan *fans;
+    struct mfdconfig *defaults;
 };
 
 int countFans(char *basePath);
-struct applesmc *find_applesmc();
-void scan_sensors(struct applesmc *smc, struct mfdconfig *cfg);
-void read_sensors(struct applesmc *smc);
+void find_applesmc(struct applesmc *smc);
+void scan_sensors(struct applesmc *smc, struct mfdconfig cfg);
+void read_sensors(struct applesmc *smc, struct mfdconfig cfg);
 
 #endif

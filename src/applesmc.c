@@ -54,24 +54,24 @@ int countFans(char *basePath)
 	return fancnt;
 }
 
-struct applesmc *find_applesmc()
+void find_applesmc(struct applesmc *smc)
 {
-    struct applesmc smc, *retsmc;
-    retsmc = malloc(sizeof(struct applesmc));
-    smc.fans = malloc(sizeof(struct fan) * MAXFANS);
-    smc.sensors = malloc(sizeof(struct sensor) * 50);
-
-    DIR *fd_dir;
     int i, ret;
 
-    smc.path[0] = 0;
+    smc->fans = calloc(MAXFANS, sizeof(struct fan));
+    smc->sensors = calloc(50, sizeof(struct sensor));
+
+    DIR *fd_dir;
+    
+
+    smc->path[0] = 0;
 
     fd_dir = opendir(HWMON_DIR);
     if (fd_dir != NULL)
     {
         struct dirent *dir_entry;
 
-        while ((dir_entry = readdir(fd_dir)) != NULL && smc.path[0] == 0)
+        while ((dir_entry = readdir(fd_dir)) != NULL && smc->path[0] == 0)
         {
             if (dir_entry->d_name[0] != '.')
             {
@@ -102,7 +102,7 @@ struct applesmc *find_applesmc()
 
                                 if (dev_path != NULL)
                                 {
-                                    strlcpy(smc.path, dev_path, PATH_MAX);
+                                    strlcpy(smc->path, dev_path, PATH_MAX);
                                     free(dev_path);
                                 }
                             }
@@ -114,37 +114,34 @@ struct applesmc *find_applesmc()
         closedir(fd_dir);
     }
 
-    if (smc.path[0] == 0)
+    if (smc->path[0] == 0)
     {
         printf("Error: Cannot find applesmc device.\n");
         exit(-1);
     }
 
-    smc.fan_cnt = countFans(smc.path);
+    smc->fan_cnt = countFans(smc->path);
     
-    for (i = 0; i < smc.fan_cnt; i++)
+    for (i = 0; i < smc->fan_cnt; i++)
     {
         char path[PATH_MAX];
 
-        smc.fans[i].id = i + 1;
+        smc->fans[i].id = i + 1;
 
-        sprintf(path, "%s/fan%d_output", smc.path, i+1);
-        strlcpy(smc.fans[i].out_path, path, PATH_MAX);
+        sprintf(path, "%s/fan%d_output", smc->path, i+1);
+        strlcpy(smc->fans[i].out_path, path, PATH_MAX);
 
-        sprintf(path, "%s/fan%d_manual", smc.path, i+1);
-        strlcpy(smc.fans[i].manual_path, path, PATH_MAX);
+        sprintf(path, "%s/fan%d_manual", smc->path, i+1);
+        strlcpy(smc->fans[i].manual_path, path, PATH_MAX);
     }
-
-    retsmc = &smc;
-    return retsmc;
 }
 
-void scan_sensors(struct applesmc *smc, struct mfdconfig *cfg)
+void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
 {
     int i, j, result, count = 0;
     struct stat buf;
 
-    int sensordesclen = sizeof(cfg->profile->sensordesc) / sizeof(cfg->profile->sensordesc[0]);
+    int sensordesclen = sizeof(cfg.profile->sensordesc) / sizeof(cfg.profile->sensordesc[0]);
 
     while (count < 100)
     {
@@ -166,8 +163,6 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig *cfg)
 
     if (smc->sensor_cnt > 0)
     {
-
-
         printf("Found %d sensors:\n", smc->sensor_cnt);
         for (i = 0; i < smc->sensor_cnt; i++)
         {
@@ -180,7 +175,6 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig *cfg)
             // todo: blacklist code
 
             sprintf(fname, "%s/temp%d_label", smc->path, smc->sensors[i].id);
-            smc->sensors[i].name[0] = 0;
 
             FILE *fp = fopen(fname, "r");
             if (fp == NULL)
@@ -218,11 +212,11 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig *cfg)
             int found = 0;
             for (j = 0; j < sensordesclen && !found; j++)
             {
-                //printf("dbug: %d %s = %s\n", j, smc->sensors[j].key, cfg->profile->sensordesc[j].id);
-                if (strcmp(smc->sensors[i].key, cfg->profile->sensordesc[j].id) == 0)
+                //printf("dbug: %d %s = %s\n", j, smc->sensors[j].key, cfg.profile->sensordesc[j].id);
+                if (strcmp(smc->sensors[i].key, cfg.profile->sensordesc[j].id) == 0)
                 {
                     found = 1;
-                    printf("%s - %s\n", cfg->profile->sensordesc[j].id, cfg->profile->sensordesc[j].desc);
+                    printf("%s - %s\n", cfg.profile->sensordesc[j].id, cfg.profile->sensordesc[j].desc);
                 }
             }
 
@@ -241,12 +235,19 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig *cfg)
     fflush(stdout);
 }
 
-void read_sensors(struct applesmc *smc)
+void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
 {
-    int i;
+    int i, j, k, cnt, sensorcnt;
+    float tempavg;
 
     for (i = 0; i < smc->sensor_cnt; i++)
     {
+        for (k = 0; k < smc->sensor_cnt; k++)
+        {
+            if (strcmp(cfg.profile->sensordesc[k].id, smc->sensors[i].key) >= 0)
+                strlcpy(smc->sensors[i].name, cfg.profile->sensordesc[k].desc, strlen(cfg.profile->sensordesc[k].desc)+1);
+        }
+
         if (smc->sensors[i].blacklisted != true)
         {
             int fd = open(smc->sensors[i].fname, O_RDONLY);
@@ -289,4 +290,37 @@ void read_sensors(struct applesmc *smc)
     }
 
     smc->temp_avg = smc->temp_avg / smc->active_sensors;
+
+    for (i = 0; i < smc->fan_cnt; i++)
+    {
+        tempavg = 0;
+        cnt = (cfg.fanctrl[i].sensor_cnt > 0) ? cfg.fanctrl[i].sensor_cnt : cfg.profile->fanctrl[i].sensor_cnt;
+
+        for (j = 0; j < cnt; j++)
+        {
+            if (cfg.fanctrl[i].sensor_cnt > 0)
+            {
+                for (k = 0; k < 50; k++)
+                {
+                    if (strcmp(cfg.fanctrl[i].sensors[j], smc->sensors[k].key) == 0)
+                        tempavg += smc->sensors[k].value;
+                }
+            } else {
+                for (k = 0; k < 50; k++)
+                {
+                    if (strcmp(cfg.profile->fanctrl[i].sensors[j], smc->sensors[k].key) == 0)
+                    {
+                        tempavg += smc->sensors[k].value;
+                    }
+                }
+            }
+            
+            tempavg = tempavg / cnt;
+
+            if (tempavg <= 0.0 && tempavg != 0)
+                tempavg *= -1;
+
+            smc->fans[i].sensor_avg = tempavg;
+        }
+    }
 }
