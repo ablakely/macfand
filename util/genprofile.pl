@@ -40,7 +40,7 @@ sub gen_profile {
         print $FH "\t\t{\n\t\t\tsensor = \"".$sensors[$i]."\";\n\t\t\tvalue = \"".$profile{sensors}{$sensors[$i]}."\";\n\t\t},\n";
     }
     
-    print $FH "\t);\n};\n";
+    print $FH "\t);\n\tfan_desc = ();\n};\n";
 }
 
 my @dump = read_dump();
