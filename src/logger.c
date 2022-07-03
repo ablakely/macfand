@@ -28,6 +28,17 @@ void logger(struct applesmc *smc, struct mfdconfig cfg)
 
         printf("\n");
     }
+    
+    if (cfg.log_level > 1)
+    {
+        printf("Sensors:");
+        for (i = 0; i < smc->sensor_cnt; i++)
+        {
+            printf(" %s=%.0fC", smc->sensors[i].key, smc->sensors[i].value);
+        }
+
+        printf("\n");
+    }
 
     fflush(stdout);
 }
