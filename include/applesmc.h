@@ -8,6 +8,8 @@
 #ifndef APPLESMC_H
 #define APPLESMC_H
 
+
+#include <limits.h>
 #include "config.h"
 
 struct sensor

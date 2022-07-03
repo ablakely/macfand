@@ -14,7 +14,7 @@
 #define HWMON_DIR		"/sys/class/hwmon"
 #define APPLESMC_ID		"applesmc"
 #define SENSKEY_MAXLEN	16
-#define MAXFANS         15
+#define MAXFANS         18
 
 #define MACHINESDIR "./machines"
 

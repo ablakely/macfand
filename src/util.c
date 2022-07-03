@@ -12,6 +12,8 @@
 #include <ctype.h>
 #include <math.h>
 
+#include "util.h"
+
 void strlcpy(char *to, const char *from, int len)
 {
     //from[len-1] = '\0';

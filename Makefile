@@ -20,20 +20,14 @@ all: macfand
 
 macfand:
 	@rm -rf $(OBJ) && mkdir $(OBJ)
-	$(CC) $(CFLAGS)  $(SRC)/config.c -o $(OBJ)/config.o 
-	$(CC) $(CFLAGS)  $(SRC)/control.c -o $(OBJ)/control.o
-	$(CC) $(CFLAGS)  $(SRC)/macfan.c -o $(OBJ)/macfan.o
-	$(CC) -o $(EXEC) $(OBJ)/*.o $(BINFLAGS)
-	@echo "Build complete"
-
-dev:
-	@rm -rf $(OBJ) && mkdir $(OBJ)
-	$(CC) $(CFLAGS) $(SRC)/conf.c     -o $(OBJ)/config.o
-	$(CC) $(CFLAGS) $(SRC)/ctrl.c     -o $(OBJ)/control.o
-	$(CC) $(CFLAGS) $(SRC)/macfand.c  -o $(OBJ)/macfan.o
+	$(CC) $(CFLAGS) $(SRC)/config.c   -o $(OBJ)/config.o
+	$(CC) $(CFLAGS) $(SRC)/control.c  -o $(OBJ)/control.o
+	$(CC) $(CFLAGS) $(SRC)/macfan.c   -o $(OBJ)/macfan.o
 	$(CC) $(CFLAGS) $(SRC)/util.c     -o $(OBJ)/util.o
+	$(CC) $(CFLAGS) $(SRC)/logger.c   -o $(OBJ)/logger.o
 	$(CC) $(CFLAGS) $(SRC)/applesmc.c -o $(OBJ)/applesmc.o
 	$(CC) -o $(EXEC) $(OBJ)/*.o $(BINFLAGS)
+	@echo "Build complete"
 
 
 clean:
