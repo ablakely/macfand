@@ -25,7 +25,7 @@
 
 #define PID_FILE	"/var/run/macfand.pid"
 #define LOG_FILE	"/var/log/macfand.log"
-#define CFG_FILE	"./newconf.conf"
+#define CFG_FILE	"/etc/macfand.conf"
 
 int running = 1;
 int lock_fd = -1;

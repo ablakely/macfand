@@ -16,6 +16,7 @@ SRC=./src
 EXEC=macfand
 BINFLAGS=-g -lconfig -lm
 ETC_DIR = /etc
+MACHINES_DIR = $(PREFIX)/macfand/machines
 all: macfand
 
 macfand:
@@ -35,17 +36,23 @@ clean:
 
 install:
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp macfand $(DESTDIR)$($PREFIX)/bin/
+	cp macfand $(DESTDIR)$(PREFIX)/bin/
 	chmod 755 $(DESTDIR)$(PREFIX)/bin/macfand
 	mkdir -p $(DESTDIR)$(MANPREFIX)/man1
-	sed "s/MFDVERSION/$(VERSION)/g" < macfand.1 > $(DESTDIR)($MANPREFIX)/man1/macfand.1
-	chmod 644 $(DESTDIR)($MANPREFIX)/man1/macfand.1
+	cp macfand.1 $(DESTDIR)$(MANPREFIX)/man1/macfand.1
+	chmod 644 $(DESTDIR)$(MANPREFIX)/man1/macfand.1
 	cp macfand.conf $(ETC_DIR)
+	mkdir -p $(DESTDIR)$(MACHINES_DIR)
+	cp -a machines/* $(DESTDIR)$(MACHINES_DIR)
 
 
+	@echo " "
 	@echo "Done!"
 	@echo " "
-	@echo "Be sure to enable macfand with systemd. This can be done with:"
+	@echo "Config file location: /etc/macfand.conf"
+	@echo "Please edit your config file and set your machine's model ID"
+	@echo " "
+	@echo "Be sure to enable macfand with systemd to run on startup. This can be done with:"
 	@echo "   sudo systemctl enable --now macfand"
 
 uninstall:
