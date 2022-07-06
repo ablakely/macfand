@@ -44,6 +44,7 @@ install:
 	cp macfand.conf $(ETC_DIR)
 	mkdir -p $(DESTDIR)$(MACHINES_DIR)
 	cp -a machines/* $(DESTDIR)$(MACHINES_DIR)
+	cp macfand.service /usr/lib/systemd/system
 
 
 	@echo " "

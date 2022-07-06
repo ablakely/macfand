@@ -1,10 +1,14 @@
 [Unit]
 Description=Mac Fan Control Daemon
 Documentation=man:macfand(1)
+After=syslog.target
+After=sysinit.target
 
 [Service]
-Type=idle
-ExecStart=/usr/bin/macfand -f 
+Type=simple
+ExecStart=/usr/bin/macfand
+ExecReload=/usr/bin/kill -HUP $MAINPID
+PIDFile=/var/run/macfand.pid
 Restart=on-failure
 RestartSec=1
 
