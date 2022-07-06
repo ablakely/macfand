@@ -9,5 +9,7 @@
 
 void strlcpy(char *to, const char *from, int len);
 int numPlaces(int n);
+float ctof(float c);
+int ctofi(int c);
 
 #endif

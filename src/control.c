@@ -60,7 +60,7 @@ void calc_fan(struct applesmc *smc, struct mfdconfig cfg)
 
 
         fan_window = fan_max - fan_min;
-        avg_speed = (normalized_temp * 2.5 * fan_window);
+        avg_speed = (normalized_temp * fan_window);
 
         if (avg_speed <= 0.0 && avg_speed != 0.0)
             avg_speed *= -1;

@@ -56,14 +56,13 @@ int countFans(char *basePath)
 
 void find_applesmc(struct applesmc *smc)
 {
-    int i, ret;
+    int i, ret, fd_name;
+    char *name_path = calloc(PATH_MAX, sizeof(char));
 
     smc->fans = calloc(MAXFANS, sizeof(struct fan));
     smc->sensors = calloc(50, sizeof(struct sensor));
 
     DIR *fd_dir;
-    
-
     smc->path[0] = 0;
 
     fd_dir = opendir(HWMON_DIR);
@@ -75,9 +74,6 @@ void find_applesmc(struct applesmc *smc)
         {
             if (dir_entry->d_name[0] != '.')
             {
-                char name_path[PATH_MAX];
-                int fd_name;
-
                 sprintf(name_path, "%s/%s/device/name", HWMON_DIR, dir_entry->d_name);
                 fd_name = open(name_path, O_RDONLY);
 
@@ -134,12 +130,18 @@ void find_applesmc(struct applesmc *smc)
         sprintf(path, "%s/fan%d_manual", smc->path, i+1);
         strlcpy(smc->fans[i].manual_path, path, PATH_MAX);
     }
+
+    free(name_path);
 }
 
 void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
 {
     int i, j, result, count = 0;
     struct stat buf;
+    char *fname = calloc(512, sizeof(char));
+    char *key_buf = calloc(SENSKEY_MAXLEN, sizeof(char));
+
+    FILE *fp;
 
     int sensordesclen = sizeof(cfg.profile->sensordesc) / sizeof(cfg.profile->sensordesc[0]);
 
@@ -166,7 +168,6 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
         printf("Found %d sensors:\n", smc->sensor_cnt);
         for (i = 0; i < smc->sensor_cnt; i++)
         {
-            char fname[512];
 
             smc->sensors[i].id = i + 1;
             smc->sensors[i].blacklisted = 0;
@@ -176,16 +177,13 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
 
             sprintf(fname, "%s/temp%d_label", smc->path, smc->sensors[i].id);
 
-            FILE *fp = fopen(fname, "r");
+            fp = fopen(fname, "r");
             if (fp == NULL)
             {
                 printf("Error: cannot open %s\n", fname);
             }
             else
             {
-                char key_buf[SENSKEY_MAXLEN];
-                memset(key_buf, 0, SENSKEY_MAXLEN);
-
                 int n = fread(key_buf, 1, SENSKEY_MAXLEN - 1, fp);
                 if (n < 1)
                 {
@@ -212,7 +210,6 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
             int found = 0;
             for (j = 0; j < sensordesclen && !found; j++)
             {
-                //printf("dbug: %d %s = %s\n", j, smc->sensors[j].key, cfg.profile->sensordesc[j].id);
                 if (strcmp(smc->sensors[i].key, cfg.profile->sensordesc[j].id) == 0)
                 {
                     found = 1;
@@ -233,11 +230,13 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
     }
 
     fflush(stdout);
+    free(fname);
+    free(key_buf);
 }
 
 void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
 {
-    int i, j, k, cnt, sensorcnt;
+    int i, j, k, cnt, avgcnt, sensorcnt;
     float tempavg;
 
     for (i = 0; i < smc->sensor_cnt; i++)
@@ -294,6 +293,8 @@ void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
     for (i = 0; i < smc->fan_cnt; i++)
     {
         tempavg = 0;
+        avgcnt  = 0;
+
         cnt = (cfg.fanctrl[i].sensor_cnt > 0) ? cfg.fanctrl[i].sensor_cnt : cfg.profile->fanctrl[i].sensor_cnt;
 
         for (j = 0; j < cnt; j++)
@@ -304,6 +305,7 @@ void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
                 {
                     if (strcmp(cfg.fanctrl[i].sensors[j], smc->sensors[k].key) == 0)
                         tempavg += smc->sensors[k].value;
+                        avgcnt++;
                 }
             } else {
                 for (k = 0; k < 50; k++)
@@ -311,16 +313,17 @@ void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
                     if (strcmp(cfg.profile->fanctrl[i].sensors[j], smc->sensors[k].key) == 0)
                     {
                         tempavg += smc->sensors[k].value;
+                        avgcnt++;
                     }
                 }
             }
-            
-            tempavg = tempavg / cnt;
-
-            if (tempavg <= 0.0 && tempavg != 0)
-                tempavg *= -1;
-
-            smc->fans[i].sensor_avg = tempavg;
         }
+
+        tempavg = tempavg / avgcnt;
+
+        if (tempavg <= 0.0 && tempavg != 0)
+            tempavg *= -1;
+
+        smc->fans[i].sensor_avg = floor(tempavg);
     }
 }

@@ -45,8 +45,8 @@ void init()
 
 void signal_handler(int sig)
 {
-     if (sig == SIGHUP) reload = 1;
-     if (sig == SIGINT || sig == SIGTERM) running = 0;
+    if (sig == SIGHUP) reload = 1;
+    if (sig == SIGINT || sig == SIGTERM) running = 0;
 }
 
 void daemonize()
@@ -77,8 +77,10 @@ void daemonize()
 void usage()
 {
     printf("usage: macfand [-fh]\n");
-    printf("  -f   run in foreground\n");
+    printf("  -f   print temperatures in farenhiet\n");
+    printf("  -n   run in foreround\n");
     printf("  -h   prints this message\n");
+    printf("  -d   disables output formatting\n");
     printf("\nmacfand - Mac Fan Control Daemon\nCopyright 2022 (C) Aaron Blakely <aaron@ephasic.org>\n");
     exit(-1);
 }
@@ -86,7 +88,7 @@ void usage()
 int main(int argc, char *argv[])
 {
     init();
-    int daemon = 1, i;
+    int daemon = 1, i, targetlen, j, fancy = 1, usef = 0;
 
     signal(SIGCHLD, SIG_IGN);
     signal(SIGTSTP, SIG_IGN);
@@ -101,11 +103,19 @@ int main(int argc, char *argv[])
     {
         if (strcmp(argv[i], "-f") == 0)
         {
+            usef = 1;
+        }
+        else if (strcmp(argv[i], "-n") == 0)
+        {
             daemon = 0;
         }
         else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
         {
             usage();
+        }
+        else if (strcmp(argv[i], "-d") == 0 || strcmp(argv[i], "--no-formating") == 0)
+        {
+            fancy = 0;
         }
         else
         {
@@ -113,11 +123,10 @@ int main(int argc, char *argv[])
         }
     }
 
-    int targetlen, j;
-
     if (daemon) daemonize();
 
     cf = read_cfg(cf, CFG_FILE);
+
     printf("Loading profile for model: %s\n", cf.modelID);
     cf.profile = read_profile(cf, cf.modelID);
     smc->defaults = cf.profile->defaultcfg;
@@ -129,7 +138,7 @@ int main(int argc, char *argv[])
     while(running)
     {
         adjust(smc, cf);
-        logger(smc, cf);
+        logger(smc, cf, fancy, usef);
 
         if (reload)
         {

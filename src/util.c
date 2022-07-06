@@ -16,12 +16,22 @@
 
 void strlcpy(char *to, const char *from, int len)
 {
-    //from[len-1] = '\0';
     memccpy(to, from, '\0', len);
     to[len-1] = '\0';
 }
 
-int numPlaces(int n) {
+int numPlaces(int n)
+{
 	if (n == 0) return 1;
 	return floor(log10(abs(n))) + 1;
+}
+
+float ctof(float c)
+{
+    return (c * 9/5)+32;
+}
+
+int ctofi(int c)
+{
+    return (c * 9/5)+32;
 }

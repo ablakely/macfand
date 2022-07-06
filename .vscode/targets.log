@@ -8,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This program built for i386-apple-darwin11.3.0
  
 
-# Make data base, printed on Thu Jun 30 20:38:38 2022
+# Make data base, printed on Sun Jul  3 20:46:30 2022
 
 # Variables
 
@@ -29,7 +29,7 @@ VSCODE_LOG_NATIVE = false
 # automatic
 @F = $(notdir $@)
 # makefile
-CURDIR := /Users/ablakely/Projects/macfand
+CURDIR := /Users/ablakely/mounts/macfand
 # makefile
 SHELL = /bin/sh
 # environment
@@ -47,9 +47,11 @@ VSCODE_VERBOSE_LOGGING = true
 # environment
 __CFBundleIdentifier = com.microsoft.VSCode
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /var/folders/zk/01kxl7_j4wx05lz0yzmbngsr0000gn/T/vscode-ipc-504890e1-6657-4d8d-b79b-7258c1ad0585.sock
+VSCODE_IPC_HOOK_EXTHOST = /var/folders/zk/01kxl7_j4wx05lz0yzmbngsr0000gn/T/vscode-ipc-a5386b13-46af-4208-9944-bbd3f3f6c4d7.sock
 # environment
 VSCODE_CWD = /
+# makefile (from `Makefile', line 19)
+MACHINES_DIR = $(PREFIX)/macfand/machines
 # environment
 PATH = /usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/Apple/usr/bin
 # environment
@@ -65,7 +67,7 @@ SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.BPpyVkAQHt/Listeners
 # environment
 VSCODE_PIPE_LOGGING = true
 # environment
-PWD = /Users/ablakely/Projects/macfand
+PWD = /Users/ablakely/mounts/macfand
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = undefined
 # environment
@@ -155,9 +157,9 @@ MAKELEVEL := 0
 # environment
 LANG = C
 # environment
-VSCODE_PID = 29279
+VSCODE_PID = 46925
 # variable set hash-table stats:
-# Load=72/1024=7%, Rehash=0, Collisions=2/96=2%
+# Load=73/1024=7%, Rehash=0, Collisions=2/97=2%
 
 # Pattern-specific Variable Values
 
@@ -165,9 +167,9 @@ VSCODE_PID = 29279
 
 # Directories
 
-# . (device 922746883, inode 1): 22 files, no impossibilities.
+# . (device 922746886, inode 1): 23 files, no impossibilities.
 
-# 22 files, no impossibilities in 1 directories.
+# 23 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -191,14 +193,17 @@ all: macfand
 
 macfand:
 #  Implicit rule search has not been done.
-#  Last modified 2022-06-30 20:33:51
+#  Last modified 2022-07-03 10:28:09
 #  File has been updated.
 #  Successfully updated.
-#  commands to execute (from `Makefile', line 22):
+#  commands to execute (from `Makefile', line 23):
 	@rm -rf $(OBJ) && mkdir $(OBJ)
-	$(CC) $(CFLAGS)  $(SRC)/config.c -o $(OBJ)/config.o 
-	$(CC) $(CFLAGS)  $(SRC)/control.c -o $(OBJ)/control.o
-	$(CC) $(CFLAGS)  $(SRC)/macfan.c -o $(OBJ)/macfan.o
+	$(CC) $(CFLAGS) $(SRC)/config.c   -o $(OBJ)/config.o
+	$(CC) $(CFLAGS) $(SRC)/control.c  -o $(OBJ)/control.o
+	$(CC) $(CFLAGS) $(SRC)/macfan.c   -o $(OBJ)/macfan.o
+	$(CC) $(CFLAGS) $(SRC)/util.c     -o $(OBJ)/util.o
+	$(CC) $(CFLAGS) $(SRC)/logger.c   -o $(OBJ)/logger.o
+	$(CC) $(CFLAGS) $(SRC)/applesmc.c -o $(OBJ)/applesmc.o
 	$(CC) -o $(EXEC) $(OBJ)/*.o $(BINFLAGS)
 	@echo "Build complete"
 	
@@ -214,7 +219,7 @@ uninstall:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  commands to execute (from `Makefile', line 58):
+#  commands to execute (from `Makefile', line 59):
 	rm -f $(DESTDIR)$(PREFIX)/macfand
 	$(ETC_DIR)/macfan.conf
 	
@@ -222,25 +227,11 @@ uninstall:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-06-30 20:00:53
+#  Last modified 2022-07-02 20:56:36
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
 # Load=0/32=0%, Rehash=0, Collisions=0/0=0%
-
-dev:
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-#  commands to execute (from `Makefile', line 30):
-	@rm -rf $(OBJ) && mkdir $(OBJ)
-	$(CC) $(CFLAGS) $(SRC)/conf.c     -o $(OBJ)/config.o
-	$(CC) $(CFLAGS) $(SRC)/ctrl.c     -o $(OBJ)/control.o
-	$(CC) $(CFLAGS) $(SRC)/macfand.c  -o $(OBJ)/macfan.o
-	$(CC) $(CFLAGS) $(SRC)/util.c     -o $(OBJ)/util.o
-	$(CC) $(CFLAGS) $(SRC)/applesmc.c -o $(OBJ)/applesmc.o
-	$(CC) -o $(EXEC) $(OBJ)/*.o $(BINFLAGS)
-	
 
 # Not a target:
 .DEFAULT:
@@ -253,7 +244,7 @@ clean:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  commands to execute (from `Makefile', line 40):
+#  commands to execute (from `Makefile', line 35):
 	rm -rf build macfand
 	
 
@@ -262,22 +253,28 @@ install:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  commands to execute (from `Makefile', line 43):
+#  commands to execute (from `Makefile', line 38):
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp macfand $(DESTDIR)$($PREFIX)/bin/
+	cp macfand $(DESTDIR)$(PREFIX)/bin/
 	chmod 755 $(DESTDIR)$(PREFIX)/bin/macfand
 	mkdir -p $(DESTDIR)$(MANPREFIX)/man1
-	sed "s/MFDVERSION/$(VERSION)/g" < macfand.1 > $(DESTDIR)($MANPREFIX)/man1/macfand.1
-	chmod 644 $(DESTDIR)($MANPREFIX)/man1/macfand.1
+	cp macfand.1 $(DESTDIR)$(MANPREFIX)/man1/macfand.1
+	chmod 644 $(DESTDIR)$(MANPREFIX)/man1/macfand.1
 	cp macfand.conf $(ETC_DIR)
+	mkdir -p $(DESTDIR)$(MACHINES_DIR)
+	cp -a machines/* $(DESTDIR)$(MACHINES_DIR)
+	@echo " "
 	@echo "Done!"
 	@echo " "
-	@echo "Be sure to enable macfand with systemd. This can be done with:"
+	@echo "Config file location: /etc/macfand.conf"
+	@echo "Please edit your config file and set your machine's model ID"
+	@echo " "
+	@echo "Be sure to enable macfand with systemd to run on startup. This can be done with:"
 	@echo "   sudo systemctl enable --now macfand"
 	
 
 # files hash-table stats:
-# Load=10/1024=1%, Rehash=0, Collisions=2/27=7%
+# Load=9/1024=1%, Rehash=0, Collisions=2/26=8%
 # VPATH Search Paths
 
 # No `vpath' search paths.
@@ -289,6 +286,6 @@ install:
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
 
-# Finished Make data base on Thu Jun 30 20:38:38 2022
+# Finished Make data base on Sun Jul  3 20:46:30 2022
 
  

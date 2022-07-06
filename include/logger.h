@@ -8,6 +8,6 @@
 #ifndef LOGGER_H_
 #define LOGGER_H_
 
-void logger(struct applesmc *smc, struct mfdconfig cfg);
+void logger(struct applesmc *smc, struct mfdconfig cfg, int fancy, int usef);
 
 #endif

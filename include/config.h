@@ -15,8 +15,7 @@
 #define APPLESMC_ID		"applesmc"
 #define SENSKEY_MAXLEN	16
 #define MAXFANS         18
-
-#define MACHINESDIR "/usr/local/macfand/machines"
+#define MACHINESDIR     "/usr/local/macfand/machines"
 
 #define max(a,b)	(a > b ? a : b)
 #define min(a,b)	(a < b ? a : b)
