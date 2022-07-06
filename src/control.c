@@ -78,10 +78,11 @@ void calc_fan(struct applesmc *smc, struct mfdconfig cfg)
 void set_fan(struct applesmc *smc, struct mfdconfig cfg)
 {
     int i, fd;
-    char buf[10];
+    char *buf;
 
     for (i = 0; i < smc->fan_cnt; i++)
     {
+        buf = calloc(10, sizeof(char));
         fd = open(smc->fans[i].manual_path, O_WRONLY);
         if (fd < 0)
         {
@@ -105,6 +106,8 @@ void set_fan(struct applesmc *smc, struct mfdconfig cfg)
             write(fd, buf, strlen(buf));
             close(fd);
         }
+        
+        free(buf);
     }
 
     fflush(stdout);
