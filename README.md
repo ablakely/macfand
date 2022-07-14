@@ -57,7 +57,7 @@ macfand uses profiles configurations (located in machines/) to provide compatibl
 | macbook5,1        |           | ✅        |               |
 | macbook5,2        |           | ✅        |               |
 | macbook6,1        |           | ✅        |               |
-| macbook7,1        |           | ✅        |               |
+| macbook7,1        | ✅        |           |               |
 | macbook8,1        |           | ✅        |               |
 | macbook9,1        |           | ✅        |               |
 | macbook10,1       |           | ✅        |               |
