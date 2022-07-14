@@ -36,15 +36,30 @@ int countFans(char *basePath)
 			if (dir_entry->d_name[0] != '.')
 			{
 				fnlen = strlen(dir_entry->d_name);
-				if (fnlen >= 8
-					&& (dir_entry->d_name[0] == 'f')
-					&& (dir_entry->d_name[1] == 'a')
-					&& (dir_entry->d_name[2] == 'n')
-					&& (dir_entry->d_name[fnlen-1] == 'n')
-					&& (dir_entry->d_name[fnlen-2] == 'i')
-					&& (dir_entry->d_name[fnlen-3] == 'm')
-					&& (dir_entry->d_name[fnlen-4] == '_')
-				) fancnt++;
+				if (fnlen >= 8 &&
+					(dir_entry->d_name[0] == 'f') &&
+					(dir_entry->d_name[1] == 'a') &&
+					 (dir_entry->d_name[2] == 'n') &&
+					(dir_entry->d_name[fnlen-1] == 'n') &&
+					(dir_entry->d_name[fnlen-2] == 'i') &&
+					(dir_entry->d_name[fnlen-3] == 'm') &&
+					(dir_entry->d_name[fnlen-4] == '_'))
+                {
+                    // fanX_min 
+                    fancnt++;
+                }
+                else if (fnlen >= 9 &&
+                    (dir_entry->d_name[0] == 'f') &&
+                    (dir_entry->d_name[1] == 'a') &&
+                    (dir_entry->d_name[2] == 'n') &&
+                    (dir_entry->d_name[fnlen-1] == 'n') &&
+                    (dir_entry->d_name[fnlen-2] == 'i') &&
+                    (dir_entry->d_name[fnlen-3] == 'm') &&
+                    (dir_entry->d_name[fnlen-4] == '_'))
+                {
+                    // fanXX_min - Xserve has up to 18 fans
+                    fancnt++;
+                }
 			}
 		}
 	} else {

@@ -1,7 +1,36 @@
 # macfand 
 Fan control daemon for Apple Computers running Linux through the applesmc kernel module.
 
+## libconfig
+macfand requires [libconfig](http://hyperrealm.github.io/libconfig/) which is available on many distrobutions.
+
+### Debian / Ubuntu / Mint / Elementary OS / MX / Pop!_OS / Zorin
+
+    sudo apt-get install libconfig-dev
+
+### Arch / Manjaro / EndeavourOS 
+
+    sudo pacman -S libconfig
+
+### Fedora / CentOS / Rocky
+
+    sudo yum install libconfig
+
+### Gentoo
+
+    sudo emerge dev-libs/libconfig
+
+### openSUSE
+
+    sudo zypper install libconfig-devel
+
+### Alpine
+
+    sudo apk add libconfig
+
+
 ## Installing
+
     make
     sudo make install
     
@@ -14,7 +43,7 @@ macfand is available in the [Arch User Repository](https://aur.archlinux.org/pac
 
 ## Compatibility
 
-macfand uses profiles configurations (located in machines/) to provide compatiblity with many machines as well as the ability to tune the performance of the fans for lower decebals.
+macfand uses profiles configurations (located in the machines directory) to provide compatiblity with many machines as well as the ability to tune the performance of the fans for lower decebals.
 
 | Device Identifer  | Confirmed | Untested  | Not Supported |
 |-------------------|-----------|-----------|---------------|
