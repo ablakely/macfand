@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "util.h"
 #include "config.h"
@@ -19,6 +20,7 @@ int printedNewLines = 0;
 void logger(struct applesmc *smc, struct mfdconfig cfg, int fancy, int usef)
 {
     int i, j, k;
+    float sensor_avg = 0.0;
 
     if (fancy == 1)
     {
@@ -37,26 +39,27 @@ void logger(struct applesmc *smc, struct mfdconfig cfg, int fancy, int usef)
     {
         for (j = 0; j < smc->fan_cnt; j++)
         {
+            sensor_avg = isnan(smc->fans[j].sensor_avg) ? smc->temp_avg : smc->fans[j].sensor_avg;
             if (fancy == 1)
             {
                 if (usef == 1)
                 {
-                    printf("\033[u\033[0m\033[1;33mFan %d [%s]: %d RPM / Target Avg: %.0fF\033[u\033[0m\n", j+1, cfg.profile->fandesc[j].desc, smc->fans[j].speed, ctof(smc->fans[j].sensor_avg));
+                    printf("\033[u\033[0m\033[1;33mFan %d [%s]: %d RPM / Target Avg: %.0fF\033[u\033[0m\n", j+1, cfg.profile->fandesc[j].desc, smc->fans[j].speed, ctof(sensor_avg));
                 }
                 else
                 {
-                    printf("\033[u\033[0m\033[1;33mFan %d [%s]: %d RPM / Target Avg: %.0fC\033[u\033[0m\n", j+1, cfg.profile->fandesc[j].desc, smc->fans[j].speed, smc->fans[j].sensor_avg);
+                    printf("\033[u\033[0m\033[1;33mFan %d [%s]: %d RPM / Target Avg: %.0fC\033[u\033[0m\n", j+1, cfg.profile->fandesc[j].desc, smc->fans[j].speed, sensor_avg);
                 }
             }
             else
             {
                 if (usef == 1)
                 {
-                    printf("Fan %d [%s]: %d RPM / Target Avg: %.0fF\n", j+1, cfg.profile->fandesc[j].desc, smc->fans[j].speed, ctof(smc->fans[j].sensor_avg));
+                    printf("Fan %d [%s]: %d RPM / Target Avg: %.0fF\n", j+1, cfg.profile->fandesc[j].desc, smc->fans[j].speed, ctof(sensor_avg));
                 }
                 else
                 {
-                    printf("Fan %d [%s]: %d RPM / Target Avg: %.0fC\n", j+1, cfg.profile->fandesc[j].desc, smc->fans[j].speed, smc->fans[j].sensor_avg);
+                    printf("Fan %d [%s]: %d RPM / Target Avg: %.0fC\n", j+1, cfg.profile->fandesc[j].desc, smc->fans[j].speed, sensor_avg);
 
                 }
             }

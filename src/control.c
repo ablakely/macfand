@@ -47,7 +47,7 @@ void calc_fan(struct applesmc *smc, struct mfdconfig cfg)
             avg_floor = (cfg.temp_avg_floor > 0) ? cfg.temp_avg_floor : cfg.profile->defaultcfg->temp_avg_floor;
 
             temp_avg_window = avg_ceiling - avg_floor;
-            normalized_temp = (smc->temp_avg - avg_floor) / temp_avg_window;
+            normalized_temp = ((smc->temp_avg - avg_floor) / temp_avg_window);
         }
         else
         {

@@ -304,10 +304,14 @@ void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
                 for (k = 0; k < 50; k++)
                 {
                     if (strcmp(cfg.fanctrl[i].sensors[j], smc->sensors[k].key) == 0)
-                        tempavg += smc->sensors[k].value;
+                    { 
+                        tempavg += smc->sensors[k].value;    
                         avgcnt++;
+                    }
                 }
-            } else {
+            }
+            else
+            {
                 for (k = 0; k < 50; k++)
                 {
                     if (strcmp(cfg.profile->fanctrl[i].sensors[j], smc->sensors[k].key) == 0)
