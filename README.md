@@ -38,7 +38,7 @@ macfand requires [libconfig](http://hyperrealm.github.io/libconfig/) which is av
     
     sudo systemctl enable --now macfand
 
-macfand is available in the [Arch User Repository](https://aur.archlinux.org/packages/macfand-git)
+macfand is available in the Arch User Repository (AUR) as [macfand-git](https://aur.archlinux.org/packages/macfand-git)
 
 
 ## Compatibility
