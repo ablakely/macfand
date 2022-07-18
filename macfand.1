@@ -1,18 +1,39 @@
 .TH macfand 1 "June 25, 2022" "Version 1.0.0" "USER COMMANDS"
 .SH NAME
-macfand \- Fan control for Mac Computers
+macfand \- Fan control for Apple computers running Linux.
 .SH SYNOPSIS
 .B macfand
-[\-f]
+[\-nfd]
 .SH DESCRIPTION
-macfand is a daemon that reads temperature sensors and adjust the fan(s) speed on Mac Pros. macfand is configurable and logs temp and fan data to a file. macfand uses three sources to determine the fan speeed: 1) average temperature from all sensors, 2) sensor TC0P [CPU 0 Proximity Temp and 3] and sensor TM0P [Memory Proximity Temp]. Each source's impact on fan speed can be individually adjusted to fine tune working temperature on different Mac Pros.
+macfand is a daemon that reads temperature sensors and adjust the fan(s) speed on Apple computers. macfand is configurable and logs temp and fan data to a file. macfand has 2 modes of operation for controlling a fan:
 
-Important: macfand depends on applesmc-dkms.
-macfand is a fork of macfanctld which is no longer mainted, macfand is geared towards Mac Pro systems but support for others is planned.
+
+.RS
+.TP
+\- Set speed based on temp average from all available sensors
+
+.TP
+\- Set speed based on temp average from a configured group of sensors
+.RE
+
+These modes can be configured per fan, using the latter listed method is perfered for desktop machines with more than 2 fans as it allows more fine tuning for quietness or cooling performance.  macfand uses profiles to
+provide a known working/tuned out of box experience, but allows for their presets to be overridden in the configuration file.
+
+
+Important: macfand depends on the applesmc kernel module.
+
 .SH OPTIONS
 .TP
-.B \-f
+.B \-n 
 runs macfand the in foreground, logging to stdout.
+.TP
+.B \-f
+enables logging in farenhiet.
+.TP
+.B \-d
+disables output colors (enabled by default in daemon mode)
+
+
 .SH EXIT STATUS
 macfand returns non-zero exist status in case of failure to start.
 .SH FILES
@@ -21,8 +42,7 @@ macfand returns non-zero exist status in case of failure to start.
 .P
 Daemon init script.
 .RE
-
-.I /usr/lib/systemd/system
+.I /usr/lib/systemd/system/macfand.service
 .RS
 .P
 Systemd service
@@ -32,87 +52,32 @@ Systemd service
 .RS
 .P
 Configuration file that can be tuned to get desired working temperature. The format must be
-.I <key>:<number>.
-
-.I cpumem_min:
-Minimum fan speed for the CPUMEM fan (fan1). Typically, this is set to 1500 (Apples default). Maximum speed is 2900.
-
-.I expansion_min:
-Minimum fan speed for the EXPANSION fan (fan2). Typically, this is set to 1900 (Apples default). Maximum speed is 2900.
-
-.I exhaust_min:
-Minimum fan speed for the EXHASUT fan (fan3). Typically, this is set to 1200 (Apples default). Maximum speed is 2900.
-
-.I ps_min:
-Minimum fan speed for the POWER_SUPPLY fan (fan4). Typically, this is set to 1200 (Apples default). Maximum speed is 2800.
-
-
-.I temp_avg_floor:
-Average temperature in Celsius at which the fan speed will be set to fan_min. Valid values are 0 to 90, and must be less than temp_avg_ceiling.
-
-.I temp_avg_ceiling: 
-Average temperature in Celsius at which the fan speed will be set to max (6200). Valid values are 0 to 90, and must be larger than temp_avg_floor.
-
-.I temp_TC0P_floor:
-Temperature in Celsius at TC0P, at which the fan speed will be set to fan_min. Valid values are 0 to 90, and must be less than temp_TC0P_ceiling.
-
-.I temp_TC0P_ceiling:
-Temperature in Celsius at TC0P, at which the fan speed will be set to max (6200). Valid values are 0 to 90, and must be larger than temp_TC0P_floor.
-
-.I temp_TG0P_floor
-:
-Temperature in Celsius at TG0P, at which the fan speed will be set to fan_min. Valid values are 0 to 90, and must be less than temp_TG0P_ceiling.
-
-.I temp_TG0P_ceiling:
-Temperature in Celsius at TG0P, at which the fan speed will be set to max (6200). Valid values are 0 to 90, and must be larger than temp_TG0P_floor.
-
-.I exclude: 
-A list of natural numbers defining sensors that should be excluded from reading. Example:
-
-exclude: 1 7
-
-will disable reading of sensors temp1_input and temp7_input.
-
-This feature was added as a workaround for issues in applesmc-dkms that disables reading of some sensors, or in some cases, incorrectly defines sensors that don't exists.
-
-.I log_level values:
-Set the log level. Valid values are:
- 0 - Startup / Exit logging only
- 1 - Basic temp / fan logging
- 2 - Log all sensors
 .RE
-
-.I /var/log/macfanctl.log
+.I /var/log/macfand.log
 .RS
 .P
 Log file. When log_level is 1, the following ouput is generated:
-
-  Speed: [CPUMEM 1500] [EXPANSION 1900] [EXHAUST 1250] [POWER_SUPPLY 950],  AVG: 52.5C, *TC0P: 62.0C,  TG0P: 62.0C
-  Speed: [CPUMEM 1500] [EXPANSION 1900] [EXHAUST 1250] [POWER_SUPPLY 950],  AVG: 52.4C, *TC0P: 62.0C,  TG0P: 61.8C
-  Speed: [CPUMEM 1500] [EXPANSION 1900] [EXHAUST 1250] [POWER_SUPPLY 950],  AVG: 52.4C,  TC0P: 61.8C, *TG0P: 62.0C
-  Speed: [CPUMEM 2810] [EXPANSION 2800] [EXHAUST 2750] [POWER_SUPPLY 2750],  AVG: 52.3C,  TC0P: 61.8C, *TG0P: 61.8C
-
-Speed is the current fan speed. 
-
-AVG, TC0P and TG0P shows the temperature in Celsius at the source. 
-
-The '*' indicate which source that is currently driving the fan. 
 .RE
+.RE
+.I /usr/local/macfand/machines
+.RS
+.P
+Directory of profiles
 
 .SH NOTES
-Hopefully the provided configuration file will be suitable on most Mac Pros. However, there has been very little testing at this point. Therefore, enable logging and keep an eye on the temperatures in the log.
-
 To follow the log as it's written do
 
-$ tail -F /var/log/macfanctl.log
+$ tail -F /var/log/macfand.log
 .SH BUGS 
 
-Please submit bug reports, comments and suggestions to aaron@ephasic.org.
+Please submit bug reports, comments and suggestions to:
+https://github.com/ablakely/macfand/issues
 
 .SH AUTHOR
-Aaron Blakely (aaron@ephasic.org)
+Aaron Blakely (aaron@ephasic.org),
+Ephasic Software (https://ephasic.org)
 .SH "SEE ALSO"
 tail (1) 
 
-
+http://hyperrealm.github.io/libconfig/
 
