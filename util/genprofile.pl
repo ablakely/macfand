@@ -1,4 +1,8 @@
 #!/usr/bin/perl
+# genprofile.pl - Fan control daemon for Apple Computers
+#
+# macfand - Mac Fan Control Daemon
+# Copyright (C) 2022 Aaron Blakely <aaron@ephasic.org>
 
 use strict;
 use warnings;
@@ -92,7 +96,7 @@ sub gen_profile {
 
     for (my $i = 0; $i < scalar(@ctrl); $i++) {
         print $FH "\t\t{\n\t\t\t";
-        print $FH "use_avgctrl = true;\n\t\t\t";
+        print $FH "use_avg = true;\n\t\t\t";
         
         if ($ctrl[$i]->{low}) {
             print $FH "min_speed = ".$ctrl[$i]->{low}."\n\t\t\t";

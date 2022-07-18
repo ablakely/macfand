@@ -45,13 +45,13 @@ install:
 	mkdir -p $(DESTDIR)$(MACHINES_DIR)
 	cp -a machines/* $(DESTDIR)$(MACHINES_DIR)
 	cp macfand.service /usr/lib/systemd/system
-
+	perl ./util/updatemodel.pl
 
 	@echo " "
 	@echo "Done!"
 	@echo " "
 	@echo "Config file location: /etc/macfand.conf"
-	@echo "Please edit your config file and set your machine's model ID"
+	@echo "Profiles installed to: $(MACHINES_DIR)"
 	@echo " "
 	@echo "Be sure to enable macfand with systemd to run on startup. This can be done with:"
 	@echo "   sudo systemctl enable --now macfand"
