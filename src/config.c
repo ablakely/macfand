@@ -73,9 +73,9 @@ struct mfdconfig read_cfg(struct mfdconfig config, char *file)
     blacklist = config_lookup(cf, "config.blacklist");
     if (blacklist != NULL)
     {
-        count     = config_setting_length(blacklist);
+        config.blacklist_cnt = config_setting_length(blacklist);
 
-        for (n = 0; n < count; n++)
+        for (n = 0; n < config.blacklist_cnt; n++)
         {
             sensor = config_setting_get_string_elem(blacklist, n);
             strlcpy(config.blacklist[n], sensor, SENSKEY_MAXLEN);
@@ -129,8 +129,6 @@ struct mfdconfig read_cfg(struct mfdconfig config, char *file)
     }
 
     config_destroy(cf);
-    //retconfig = malloc(sizeof(config));
-    //confp = &config;
     return config;
 };
 
@@ -252,9 +250,9 @@ struct modelProfile *read_profile(struct mfdconfig inscfg, char *modelID)
     blacklist = config_lookup(&cfg, "presets.blacklist");
     if (blacklist != NULL)
     {
-        count     = config_setting_length(blacklist);
+        defcfg->blacklist_cnt = config_setting_length(blacklist);
 
-        for (n = 0; n < count; n++)
+        for (n = 0; n < defcfg->blacklist_cnt; n++)
         {
             sensor = config_setting_get_string_elem(blacklist, n);
             strlcpy(defcfg->blacklist[n], sensor, SENSKEY_MAXLEN);

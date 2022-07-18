@@ -41,6 +41,7 @@ struct mfdconfig
     int    temp_avg_ceiling;
     bool   use_avgctrl;
     char   blacklist[MAX_EXCLUDE][SENSKEY_MAXLEN];
+    int    blacklist_cnt;
     struct fan_ctrl fanctrl[MAXFANS];
     struct modelProfile *profile;
 };

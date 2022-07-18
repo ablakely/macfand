@@ -151,7 +151,7 @@ void find_applesmc(struct applesmc *smc)
 
 void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
 {
-    int i, j, result, count = 0;
+    int i, j, k, result, count = 0, skip = 0;
     struct stat buf;
     char *fname = calloc(512, sizeof(char));
     char *key_buf = calloc(SENSKEY_MAXLEN, sizeof(char));
@@ -183,12 +183,9 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
         printf("Found %d sensors:\n", smc->sensor_cnt);
         for (i = 0; i < smc->sensor_cnt; i++)
         {
-
             smc->sensors[i].id = i + 1;
             smc->sensors[i].blacklisted = 0;
             sprintf(smc->sensors[i].fname, "%s/temp%d_input", smc->path, smc->sensors[i].id);
-
-            // todo: blacklist code
 
             sprintf(fname, "%s/temp%d_label", smc->path, smc->sensors[i].id);
 
@@ -218,10 +215,41 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
 
         for (i = 0; i < smc->sensor_cnt; i++)
         {
-            //todo blacklist code
+            if (cfg.blacklist_cnt > 0)
+            {
+                skip = 0;
+                for (k = 0; k < cfg.blacklist_cnt; k++)
+                {
+                    if (strcmp(smc->sensors[i].key, cfg.blacklist[k]) == 0)
+                    {
+                        skip = 1;
+                        smc->sensors[i].blacklisted = true;
+                        printf("Skipping blacklisted sensor: %s\n", smc->sensors[i].key);
+                    }
+                }
+
+                if (skip == 1)
+                    continue;
+            }
+            else if (cfg.profile->defaultcfg->blacklist_cnt > 0)
+            {
+                skip = 0;
+                for (k = 0; k < cfg.profile->defaultcfg->blacklist_cnt; k++)
+                {
+                    if (strcmp(smc->sensors[i].key, cfg.profile->defaultcfg->blacklist[k]) == 0)
+                    {
+                        skip = 1;
+                        smc->sensors[i].blacklisted = true;
+                        printf("Skipping blacklisted sensor: %s\n", smc->sensors[i].key);
+                    }
+                }
+
+                if (skip == 1)
+                    continue;
+            }
 
             printf("\t%2d: ", smc->sensors[i].id);
-            
+
             int found = 0;
             for (j = 0; j < sensordesclen && !found; j++)
             {
@@ -318,7 +346,7 @@ void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
             {
                 for (k = 0; k < 50; k++)
                 {
-                    if (strcmp(cfg.fanctrl[i].sensors[j], smc->sensors[k].key) == 0)
+                    if (strcmp(cfg.fanctrl[i].sensors[j], smc->sensors[k].key) == 0 && smc->sensors[k].blacklisted != true)
                     { 
                         tempavg += smc->sensors[k].value;    
                         avgcnt++;
@@ -329,7 +357,7 @@ void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
             {
                 for (k = 0; k < 50; k++)
                 {
-                    if (strcmp(cfg.profile->fanctrl[i].sensors[j], smc->sensors[k].key) == 0)
+                    if (strcmp(cfg.profile->fanctrl[i].sensors[j], smc->sensors[k].key) == 0 && smc->sensors[k].blacklisted != true)
                     {
                         tempavg += smc->sensors[k].value;
                         avgcnt++;

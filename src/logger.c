@@ -68,7 +68,7 @@ void logger(struct applesmc *smc, struct mfdconfig cfg, int fancy, int usef)
             {
                 for (i = 0; i < smc->sensor_cnt; i++)
                 {
-                    if (strcmp(smc->sensors[i].key, cfg.profile->fanctrl[j].sensors[k]) == 0)
+                    if (strcmp(smc->sensors[i].key, cfg.profile->fanctrl[j].sensors[k]) == 0 && smc->sensors[i].blacklisted != true)
                     {
                         if (fancy == 1)
                         {
@@ -107,6 +107,9 @@ void logger(struct applesmc *smc, struct mfdconfig cfg, int fancy, int usef)
         printf("Sensors:");
         for (j = 0; j < smc->sensor_cnt; j++)
         {
+            if (smc->sensors[j].blacklisted == true)
+                continue;
+            
             if (fancy == 1)
             {
                 if (usef == 1)
