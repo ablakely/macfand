@@ -6,13 +6,14 @@ See the [Configuration](https://github.com/ablakely/macfand/wiki/Configuration) 
 
 ## Installing
 
+### Arch / Manjaro / EndeavourOS
+    yay -S macfand-git
+    
+### Building from source
     make
     sudo make install
     
     sudo systemctl enable --now macfand
-
-macfand is available in the Arch User Repository (AUR) as [macfand-git](https://aur.archlinux.org/packages/macfand-git)
-
 
 ## Compatibility
 
