@@ -1,6 +1,23 @@
 # macfand 
 Fan control daemon for Apple Computers running Linux through the applesmc kernel module.
 
+## Configuration
+See the [Configuration](https://github.com/ablakely/macfand/wiki/Configuration) wiki page
+
+## Installing
+
+    make
+    sudo make install
+    
+    sudo systemctl enable --now macfand
+
+macfand is available in the Arch User Repository (AUR) as [macfand-git](https://aur.archlinux.org/packages/macfand-git)
+
+
+## Compatibility
+
+See [Compatibility.md](https://github.com/ablakely/macfand/blob/master/Compatibility.md)
+
 ## libconfig
 macfand requires [libconfig](http://hyperrealm.github.io/libconfig/) which is available on many distrobutions.
 
@@ -29,19 +46,6 @@ macfand requires [libconfig](http://hyperrealm.github.io/libconfig/) which is av
     sudo apk add libconfig
 
 
-## Installing
-
-    make
-    sudo make install
-    
-    sudo systemctl enable --now macfand
-
-macfand is available in the Arch User Repository (AUR) as [macfand-git](https://aur.archlinux.org/packages/macfand-git)
-
-
-## Compatibility
-
-See [Compatibility.md](https://github.com/ablakely/macfand/blob/master/Compatibility.md)
 
 ---
 See the manual page `macfand(1)` for more information.
