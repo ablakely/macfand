@@ -54,8 +54,19 @@ struct mfdconfig read_cfg(struct mfdconfig config, char *file)
 
     if (config_lookup_string(cf, "config.modelID", &base))
     {
-        //config.modelID = malloc(strlen(base)+1);
         strlcpy(config.modelID, base, strlen(base)+1);
+    }
+
+    if (config_lookup_string(cf, "config.profileDir", &base))
+    {
+        if (base != NULL || strcmp(base, "") > 0)
+        {
+            strlcpy(config.profileDir, base, strlen(base)+1);
+        }
+    }
+    else
+    {
+        strlcpy(config.profileDir, MACHINESDIR, strlen(MACHINESDIR)+1);
     }
 
     if (config_lookup_int(cf, "config.log_level", &intbase))
@@ -157,7 +168,7 @@ struct modelProfile *read_profile(struct mfdconfig inscfg, char *modelID)
 
     char profilepath[PATH_MAX];
 
-    sprintf(profilepath, "%s/%s.conf", MACHINESDIR, modelID);
+    sprintf(profilepath, "%s/%s.conf", inscfg.profileDir, modelID);
     printf("dbug: opening profile %s\n", profilepath);
 
     config_t cfg;

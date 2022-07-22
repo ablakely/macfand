@@ -7,6 +7,7 @@
 #define CONFIG_H_
 
 #include <stdbool.h>
+#include <limits.h>
 
 #define MAX_EXCLUDE		20
 #define MAX_TARGETS     10
@@ -36,6 +37,7 @@ struct fan_ctrl
 struct mfdconfig
 {
     char   *modelID;
+    char   profileDir[PATH_MAX];
     int    log_level;
     int    temp_avg_floor;
     int    temp_avg_ceiling;
