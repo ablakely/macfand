@@ -32,7 +32,7 @@ macfand requires [libconfig](http://hyperrealm.github.io/libconfig/) which is av
 
 ### Fedora / CentOS / Rocky
 
-    sudo yum install libconfig
+    sudo yum install libconfig libconfig-devel
 
 ### Gentoo
 
