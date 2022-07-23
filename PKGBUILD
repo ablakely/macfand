@@ -28,7 +28,7 @@ validpgpkeys=()
 
 pkgver() {
         cd "${_pkgname}"
-        printf "1.0.0.r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+        printf "1.1.r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 build() {
@@ -38,8 +38,8 @@ build() {
 
 package() {
 	cd macfand
-	mkdir -p ${pkgdir}/opt/${pkgname}
-	cp -rf * ${pkgdir}/opt/${pkgname}
+	mkdir -p ${pkgdir}/usr/local/${pkgname}
+	cp -rf * ${pkgdir}/usr/local/${pkgname}
 
 	install -Dm755 macfand "${pkgdir}/usr/bin/macfand"
 	install -Dm644 macfand.conf "${pkgdir}/etc/macfand.conf"
@@ -47,4 +47,6 @@ package() {
 	install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
 	install -Dm644 macfand.1 "${pkgdir}/usr/share/man/man1/macfand.1"
 	install -Dm644 macfand.service "${pkgdir}/usr/lib/systemd/system/macfand.service"
+
+	perl ./util/updatemodel "${pkgdir}/etc/macfand.conf" "${pkgdir}/usr/local/${pkgname}"
 }
