@@ -72,11 +72,11 @@ sub update_config {
 if (`whoami` !~ /root/) {
     print "Error: Script requires root.\n";
 } else {
-    if ($ARGV[1]) {
-        findModel($ARGV[1]);
+    if ($ARGV[0]) {
+        findModel($ARGV[0]);
     }
     elsif ($ARGV[1] && $ARGV[2]) {
-        findModel($ARGV[1], $ARGV[2]);
+        findModel($ARGV[0], $ARGV[1]);
     } else {
         findModel();
     }
