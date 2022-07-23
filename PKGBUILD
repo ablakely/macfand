@@ -2,7 +2,7 @@
 #
 # Maintainer: Aaron Blakely <aaron@ephasic.org>
 pkgname=macfand-git
-pkgver=1.0.0.r32.90b5789
+pkgver=1.1.r32.90b5789aa
 pkgrel=1
 epoch=
 pkgdesc="Mac fan control daemon"
@@ -10,8 +10,8 @@ arch=(x86_64 i686)
 url="https://github.com/ablakely/macfand.git"
 license=('MIT')
 groups=()
-depends=()
-makedepends=(git)
+depends=(libconfig)
+makedepends=(git make)
 checkdepends=()
 optdepends=()
 provides=(macfand)
@@ -38,8 +38,8 @@ build() {
 
 package() {
 	cd macfand
-	mkdir -p ${pkgdir}/usr/local/${pkgname}
-	cp -rf * ${pkgdir}/usr/local/${pkgname}
+	mkdir -p ${pkgdir}/usr/local/${pkgname/-git/}
+	cp -rf * ${pkgdir}/usr/local/${pkgname/-git/}
 
 	install -Dm755 macfand "${pkgdir}/usr/bin/macfand"
 	install -Dm644 macfand.conf "${pkgdir}/etc/macfand.conf"
@@ -48,5 +48,5 @@ package() {
 	install -Dm644 macfand.1 "${pkgdir}/usr/share/man/man1/macfand.1"
 	install -Dm644 macfand.service "${pkgdir}/usr/lib/systemd/system/macfand.service"
 
-	perl ./util/updatemodel "${pkgdir}/etc/macfand.conf" "${pkgdir}/usr/local/${pkgname}"
+	sudo perl ./util/updatemodel.pl "${pkgdir}/etc/macfand.conf" "${pkgdir}/usr/local/${pkgname/-git/}/machines/"
 }

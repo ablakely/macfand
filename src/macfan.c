@@ -76,7 +76,7 @@ void daemonize()
 
 void usage()
 {
-    printf("usage: macfand [-fh]\n");
+    printf("usage: macfand [-fnhd]\n");
     printf("  -f   print temperatures in farenhiet\n");
     printf("  -n   run in foreround\n");
     printf("  -h   prints this message\n");
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
             reload = 0;
         }
 
-        sleep(5);
+        sleep(cf.pollingInterval);
     }
 
     if (lock_fd != -1)

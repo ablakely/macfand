@@ -69,6 +69,15 @@ struct mfdconfig read_cfg(struct mfdconfig config, char *file)
         strlcpy(config.profileDir, MACHINESDIR, strlen(MACHINESDIR)+1);
     }
 
+    if (config_lookup_int(cf, "config.polling_interval", &intbsdr))
+    {
+        config.pollingInterval = intbase;
+    }
+    else
+    {
+        config.pollingInterval = 5;
+    }
+
     if (config_lookup_int(cf, "config.log_level", &intbase))
         config.log_level = intbase;
 
@@ -101,8 +110,6 @@ struct mfdconfig read_cfg(struct mfdconfig config, char *file)
         for (n = 0; n < count; n++)
         {
             config_setting_t *fanc = config_setting_get_elem(fan_ctrl, n);
-            //config.fanctrl[n] = malloc(sizeof(struct fan_ctrl));
-
 
             if (config_setting_lookup_int(fanc, "floor", &intbase))
                 config.fanctrl[n].floor = intbase;
