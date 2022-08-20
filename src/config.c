@@ -69,7 +69,7 @@ struct mfdconfig read_cfg(struct mfdconfig config, char *file)
         strlcpy(config.profileDir, MACHINESDIR, strlen(MACHINESDIR)+1);
     }
 
-    if (config_lookup_int(cf, "config.polling_interval", &intbsdr))
+    if (config_lookup_int(cf, "config.polling_interval", &intbase))
     {
         config.pollingInterval = intbase;
     }
