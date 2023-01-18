@@ -44,7 +44,8 @@ install:
 	cp macfand.conf $(ETC_DIR)
 	mkdir -p $(DESTDIR)$(MACHINES_DIR)
 	cp -a machines/* $(DESTDIR)$(MACHINES_DIR)
-	cp macfand.service /usr/lib/systemd/system
+	#cp macfand.service /usr/lib/systemd/system
+	sh macfand.service.gen > /usr/lib/systemd/system/macfand.service
 	perl ./util/updatemodel.pl
 
 	@echo " "
