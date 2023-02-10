@@ -1,3 +1,10 @@
+#!/bin/sh
+
+if [ -z "$PREFIX" ] ; then
+  export PREFIX="/usr/local"
+fi
+
+sed -e "s!{{PREFIX}}!$PREFIX!g" <<__EOF__
 [Unit]
 Description=Mac Fan Control Daemon
 Documentation=man:macfand(1)
@@ -6,7 +13,7 @@ After=sysinit.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/macfand -d
+ExecStart={{PREFIX}}/bin/macfand -d
 ExecReload=/usr/bin/kill -HUP $MAINPID
 PIDFile=/var/run/macfand.pid
 Restart=on-failure
@@ -14,3 +21,4 @@ RestartSec=1
 
 [Install]
 WantedBy=multi-user.target
+__EOF__
