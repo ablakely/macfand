@@ -9,7 +9,9 @@
 
 #ifdef __STDC_VERSION__
 #if __STDC_VERSION >= 199901L
+#ifdef __USE_XOPEN2K
 void strlcpy(char *to, const char *from, int len);
+#endif
 #endif
 #endif
 

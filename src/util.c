@@ -16,11 +16,13 @@
 
 #ifdef __STDC_VERSION__
 #if __STDC_VERSION >= 199901L
+#ifdef __USE_XOPEN2K
 void strlcpy(char *to, const char *from, int len)
 {
     memccpy(to, from, '\0', len);
     to[len-1] = '\0';
 }
+#endif
 #endif
 #endif
 
