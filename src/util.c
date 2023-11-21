@@ -14,11 +14,15 @@
 
 #include "util.h"
 
+#ifdef __STDC_VERSION__
+#if __STDC_VERSION >= 199901L
 void strlcpy(char *to, const char *from, int len)
 {
     memccpy(to, from, '\0', len);
     to[len-1] = '\0';
 }
+#endif
+#endif
 
 int numPlaces(int n)
 {

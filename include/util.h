@@ -7,7 +7,12 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#ifdef __STDC_VERSION__
+#if __STDC_VERSION >= 199901L
 void strlcpy(char *to, const char *from, int len);
+#endif
+#endif
+
 int numPlaces(int n);
 float ctof(float c);
 int ctofi(int c);
