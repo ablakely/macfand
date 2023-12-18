@@ -7,8 +7,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#ifdef __GLIBC_MINOR__
-#if __GLIBC_MINOR >= 38
+#ifdef __GLIBC__
+#if __GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 38)
 void strlcpy(char *to, const char *from, int len);
 #endif
 #endif
