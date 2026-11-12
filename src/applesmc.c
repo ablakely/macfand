@@ -380,6 +380,93 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
     free(key_buf);
 }
 
+/*
+ * External (non-SMC) sensors for per-fan fan_sensors lists, written as
+ * "<hwmon name>:<temp label>", e.g. "coretemp:Package id 0" or
+ * "amdgpu:junction". The SMC on T2 Macs has no usable CPU die or GPU
+ * junction sensor, so these are needed to track real load.
+ */
+#define MAX_EXT 16
+static struct { char spec[SENSKEY_MAXLEN]; char path[PATH_MAX]; bool warned; } ext[MAX_EXT];
+static int ext_cnt = 0;
+
+static void resolve_ext(const char *spec, char *out)
+{
+    char hw[SENSKEY_MAXLEN], p[PATH_MAX], buf[128];
+    const char *colon = strchr(spec, ':');
+    DIR *d;
+    struct dirent *e;
+
+    out[0] = 0;
+    if (!colon) return;
+    snprintf(hw, sizeof(hw), "%.*s", (int)(colon - spec), spec);
+    const char *label = colon + 1;
+
+    d = opendir(HWMON_DIR);
+    if (!d) return;
+    while ((e = readdir(d)) != NULL && out[0] == 0)
+    {
+        if (e->d_name[0] == '.') continue;
+        snprintf(p, sizeof(p), "%s/%s/name", HWMON_DIR, e->d_name);
+        FILE *f = fopen(p, "r");
+        if (!f) continue;
+        if (!fgets(buf, sizeof(buf), f)) { fclose(f); continue; }
+        fclose(f);
+        buf[strcspn(buf, "\n")] = 0;
+        if (strcmp(buf, hw) != 0) continue;
+
+        for (int t = 1; t < 64 && out[0] == 0; t++)
+        {
+            snprintf(p, sizeof(p), "%s/%s/temp%d_label", HWMON_DIR, e->d_name, t);
+            f = fopen(p, "r");
+            if (!f) continue;
+            if (fgets(buf, sizeof(buf), f))
+            {
+                buf[strcspn(buf, "\n")] = 0;
+                if (strcmp(buf, label) == 0)
+                    snprintf(out, PATH_MAX, "%s/%s/temp%d_input", HWMON_DIR, e->d_name, t);
+            }
+            fclose(f);
+        }
+    }
+    closedir(d);
+}
+
+/* Returns 1 and sets *val on success. */
+static int read_ext_sensor(const char *spec, float *val)
+{
+    int i, v;
+    for (i = 0; i < ext_cnt; i++)
+        if (strcmp(ext[i].spec, spec) == 0) break;
+
+    if (i == ext_cnt)
+    {
+        if (ext_cnt == MAX_EXT) return 0;
+        strlcpy(ext[i].spec, spec, SENSKEY_MAXLEN);
+        ext[i].warned = false;
+        ext_cnt++;
+        resolve_ext(spec, ext[i].path);
+        if (ext[i].path[0])
+            printf("External sensor %s -> %s\n", spec, ext[i].path);
+    }
+
+    if (ext[i].path[0] == 0 || read_sysfs_int(ext[i].path, &v) != 0)
+    {
+        /* hwmon numbering can change (e.g. module reload): re-resolve */
+        resolve_ext(spec, ext[i].path);
+        if (ext[i].path[0] == 0 || read_sysfs_int(ext[i].path, &v) != 0)
+        {
+            if (!ext[i].warned)
+                printf("Error: external sensor %s not found\n", spec);
+            ext[i].warned = true;
+            return 0;
+        }
+    }
+    ext[i].warned = false;
+    *val = v / 1000.0;
+    return 1;
+}
+
 void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
 {
     int i, j, k, cnt, avgcnt, sensorcnt;
@@ -446,42 +533,46 @@ void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
 
     for (i = 0; i < smc->fan_cnt; i++)
     {
+        /* Per-fan control uses the HOTTEST listed sensor: averaging a
+         * cool sensor with a hot one hides exactly the heat we react to. */
         tempavg = 0;
         avgcnt  = 0;
 
-        cnt = (cfg.fanctrl[i].sensor_cnt > 0) ? cfg.fanctrl[i].sensor_cnt : cfg.profile->fanctrl[i].sensor_cnt;
+        int use_cfg = cfg.fanctrl[i].sensor_cnt > 0;
+        cnt = use_cfg ? cfg.fanctrl[i].sensor_cnt : cfg.profile->fanctrl[i].sensor_cnt;
 
         for (j = 0; j < cnt; j++)
         {
-            if (cfg.fanctrl[i].sensor_cnt > 0)
+            const char *want = use_cfg ? cfg.fanctrl[i].sensors[j] : cfg.profile->fanctrl[i].sensors[j];
+            float v;
+
+            if (strchr(want, ':'))
             {
-                for (k = 0; k < MAXSENSORS; k++)
+                if (read_ext_sensor(want, &v))
                 {
-                    if (k < smc->sensor_cnt && strcmp(cfg.fanctrl[i].sensors[j], smc->sensors[k].key) == 0 && smc->sensors[k].blacklisted != true && smc->sensors[k].valid)
-                    { 
-                        tempavg += smc->sensors[k].value;    
-                        avgcnt++;
-                    }
+                    if (avgcnt == 0 || v > tempavg) tempavg = v;
+                    avgcnt++;
                 }
+                continue;
             }
-            else
+
+            for (k = 0; k < smc->sensor_cnt; k++)
             {
-                for (k = 0; k < MAXSENSORS; k++)
+                if (strcmp(want, smc->sensors[k].key) == 0 && smc->sensors[k].blacklisted != true && smc->sensors[k].valid)
                 {
-                    if (k < smc->sensor_cnt && strcmp(cfg.profile->fanctrl[i].sensors[j], smc->sensors[k].key) == 0 && smc->sensors[k].blacklisted != true && smc->sensors[k].valid)
-                    {
-                        tempavg += smc->sensors[k].value;
-                        avgcnt++;
-                    }
+                    v = smc->sensors[k].value;
+                    if (avgcnt == 0 || v > tempavg) tempavg = v;
+                    avgcnt++;
                 }
             }
         }
 
-        if (avgcnt > 0)
-            tempavg = tempavg / avgcnt;
-
-        if (tempavg <= 0.0 && tempavg != 0)
-            tempavg *= -1;
+        /* No readable sensor for this fan: fail hot, not cold. */
+        if (cnt > 0 && avgcnt == 0)
+        {
+            printf("Error: no readable sensors for fan %d, forcing max\n", i + 1);
+            tempavg = 200.0;
+        }
 
         smc->fans[i].sensor_avg = floor(tempavg);
     }

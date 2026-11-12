@@ -41,7 +41,9 @@ void calc_fan(struct applesmc *smc, struct mfdconfig cfg)
         fan_max = (cfg.fanctrl[i].max_speed > 0) ? cfg.fanctrl[i].max_speed : cfg.profile->fanctrl[i].max_speed;
         fan_min = (cfg.fanctrl[i].min_speed > 0) ? cfg.fanctrl[i].min_speed : cfg.profile->fanctrl[i].min_speed;
         
-        if (cfg.fanctrl[i].use_avgctrl == 1 || cfg.profile->fanctrl[i].use_avgctrl == 1)
+        int use_avg = cfg.fanctrl[i].active ? cfg.fanctrl[i].use_avgctrl
+                                            : cfg.profile->fanctrl[i].use_avgctrl;
+        if (use_avg == 1)
         {
             avg_ceiling = (cfg.temp_avg_ceiling > 0) ? cfg.temp_avg_ceiling : cfg.profile->defaultcfg->temp_avg_ceiling;
             avg_floor = (cfg.temp_avg_floor > 0) ? cfg.temp_avg_floor : cfg.profile->defaultcfg->temp_avg_floor;
@@ -59,11 +61,14 @@ void calc_fan(struct applesmc *smc, struct mfdconfig cfg)
         }
 
 
-        fan_window = fan_max - fan_min;
-        avg_speed = (normalized_temp * fan_window);
+        /* Linear ramp: fan_min at/below floor, fan_max at/above ceiling.
+         * (Previously |normalized| * window, which made fans speed up as
+         * temps fell below the floor and never reached fan_max.) */
+        if (normalized_temp < 0.0) normalized_temp = 0.0;
+        if (normalized_temp > 1.0) normalized_temp = 1.0;
 
-        if (avg_speed <= 0.0 && avg_speed != 0.0)
-            avg_speed *= -1;
+        fan_window = fan_max - fan_min;
+        avg_speed = fan_min + (normalized_temp * fan_window);
 
         if (avg_speed > fan_max)
             avg_speed = fan_max;

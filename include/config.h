@@ -15,7 +15,7 @@
 #define HWMON_DIR		"/sys/class/hwmon"
 #define APPLESMC_ID		"applesmc"
 #define MACSMC_HWMON_ID	"macsmc_hwmon"
-#define SENSKEY_MAXLEN	16
+#define SENSKEY_MAXLEN	48
 #define MAXFANS         18
 #define MAXSENSORS      100
 #define MACHINESDIR     "/usr/local/macfand/machines"

@@ -111,6 +111,16 @@ struct mfdconfig read_cfg(struct mfdconfig config, char *file)
         {
             config_setting_t *fanc = config_setting_get_elem(fan_ctrl, n);
 
+            config.fanctrl[n].active = 1;
+            config.fanctrl[n].use_avgctrl = 0;
+            config.fanctrl[n].sensor_cnt = 0;
+            if (config.fanctrl[n].sensors == NULL)
+            {
+                config.fanctrl[n].sensors = calloc(MAX_TARGETS, sizeof(char *));
+                for (n2 = 0; n2 < MAX_TARGETS; n2++)
+                    config.fanctrl[n].sensors[n2] = calloc(SENSKEY_MAXLEN, sizeof(char));
+            }
+
             if (config_setting_lookup_int(fanc, "floor", &intbase))
                 config.fanctrl[n].floor = intbase;
 
@@ -132,7 +142,7 @@ struct mfdconfig read_cfg(struct mfdconfig config, char *file)
             fansensors = config_setting_get_member(fanc, "fan_sensors");
             if (fansensors != NULL)
             {
-                config.fanctrl[n].sensor_cnt = config_setting_length(fansensors);
+                config.fanctrl[n].sensor_cnt = min(config_setting_length(fansensors), MAX_TARGETS);
 
                 for (n2 = 0; n2 < config.fanctrl[n].sensor_cnt; n2++)
                 {
