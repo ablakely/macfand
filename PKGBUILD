@@ -14,6 +14,7 @@ makedepends=(git make)
 provides=("${_pkgname}")
 conflicts=("${_pkgname}")
 source=("git+$url")
+backup=('etc/macfand.conf')
 options=(!debug strip)
 md5sums=('SKIP')
 
