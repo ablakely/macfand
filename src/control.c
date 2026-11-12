@@ -81,7 +81,9 @@ void calc_fan(struct applesmc *smc, struct mfdconfig cfg)
 
         if (last > 0 && want < last)
         {
-            if (last - want < cfg.rampdown_deadband)
+            /* Deadband never blocks the final step back to fan_min,
+             * otherwise a fan can park just above minimum forever. */
+            if (last - want < cfg.rampdown_deadband && want > fan_min)
                 want = last;                                /* hold */
             else if (cfg.rampdown_step > 0 && last - want > cfg.rampdown_step)
                 want = last - cfg.rampdown_step;            /* ease down */
