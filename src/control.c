@@ -76,7 +76,18 @@ void calc_fan(struct applesmc *smc, struct mfdconfig cfg)
         if (avg_speed < fan_min)
             avg_speed = fan_min;
 
-        smc->fans[i].speed = (int)avg_speed;
+        int want = (int)avg_speed;
+        int last = smc->fans[i].last_speed;
+
+        if (last > 0 && want < last)
+        {
+            if (last - want < cfg.rampdown_deadband)
+                want = last;                                /* hold */
+            else if (cfg.rampdown_step > 0 && last - want > cfg.rampdown_step)
+                want = last - cfg.rampdown_step;            /* ease down */
+        }
+
+        smc->fans[i].speed = want;
     }
 }
 
@@ -122,6 +133,8 @@ void set_fan(struct applesmc *smc, struct mfdconfig cfg)
             sprintf(buf, "%d", smc->fans[i].speed);
             if (write(fd, buf, strlen(buf)) < 0)
                 printf("Error: write %s to %s failed\n", buf, smc->fans[i].out_path);
+            else
+                smc->fans[i].last_speed = smc->fans[i].speed;
             close(fd);
         }
         

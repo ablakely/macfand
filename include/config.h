@@ -45,6 +45,8 @@ struct mfdconfig
     int    temp_avg_ceiling;
     bool   use_avgctrl;
     int    pollingInterval;
+    int    rampdown_deadband;  /* ignore slow-downs smaller than this (RPM) */
+    int    rampdown_step;      /* max slow-down per poll (RPM), 0 = unlimited */
     char   blacklist[MAX_EXCLUDE][SENSKEY_MAXLEN];
     int    blacklist_cnt;
     struct fan_ctrl fanctrl[MAXFANS];

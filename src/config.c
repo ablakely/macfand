@@ -78,6 +78,16 @@ struct mfdconfig read_cfg(struct mfdconfig config, char *file)
         config.pollingInterval = 5;
     }
 
+    /* Smoothing: speed-ups always apply immediately; slow-downs are
+     * deadbanded and rate limited so jittery sensors (e.g. CPU package
+     * temp) don't make fans hunt up and down every poll. */
+    config.rampdown_deadband = 100;
+    config.rampdown_step     = 250;
+    if (config_lookup_int(cf, "config.rampdown_deadband", &intbase) && intbase >= 0)
+        config.rampdown_deadband = intbase;
+    if (config_lookup_int(cf, "config.rampdown_step", &intbase) && intbase >= 0)
+        config.rampdown_step = intbase;
+
     if (config_lookup_int(cf, "config.log_level", &intbase))
         config.log_level = intbase;
 
