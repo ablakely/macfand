@@ -82,9 +82,21 @@ void set_fan(struct applesmc *smc, struct mfdconfig cfg)
 
     for (i = 0; i < smc->fan_cnt; i++)
     {
-        buf = calloc(10, sizeof(char));
-        fd = open(smc->fans[i].manual_path, O_WRONLY);
-        if (fd < 0)
+        buf = calloc(16, sizeof(char));
+
+        /* The driver rejects (EINVAL) anything outside the hardware range,
+         * e.g. a configured max of 2763 when the SMC reports 2762. */
+        if (smc->fans[i].hw_max > 0 && smc->fans[i].speed > smc->fans[i].hw_max)
+            smc->fans[i].speed = smc->fans[i].hw_max;
+        if (smc->fans[i].hw_min > 0 && smc->fans[i].speed < smc->fans[i].hw_min)
+            smc->fans[i].speed = smc->fans[i].hw_min;
+
+        fd = (smc->fans[i].manual_path[0] == 0) ? -2 : open(smc->fans[i].manual_path, O_WRONLY);
+        if (fd == -2)
+        {
+            /* macsmc_hwmon: no manual file, writing the target enables manual */
+        }
+        else if (fd < 0)
         {
             printf("Error: cannot open fan: %s\n", smc->fans[i].manual_path);
         }
@@ -103,7 +115,8 @@ void set_fan(struct applesmc *smc, struct mfdconfig cfg)
         else
         {
             sprintf(buf, "%d", smc->fans[i].speed);
-            write(fd, buf, strlen(buf));
+            if (write(fd, buf, strlen(buf)) < 0)
+                printf("Error: write %s to %s failed\n", buf, smc->fans[i].out_path);
             close(fd);
         }
         

@@ -154,6 +154,8 @@ int main(int argc, char *argv[])
         sleep(cf.pollingInterval);
     }
 
+    release_fans(smc);
+
     if (lock_fd != -1)
     {
         close(lock_fd);
