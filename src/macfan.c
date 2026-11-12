@@ -25,7 +25,9 @@
 
 #define PID_FILE	"/var/run/macfand.pid"
 #define LOG_FILE	"/var/log/macfand.log"
+#ifndef CFG_FILE
 #define CFG_FILE	"/etc/macfand.conf"
+#endif
 
 int running = 1;
 int lock_fd = -1;
@@ -39,7 +41,7 @@ struct applesmc *smc;
 void init()
 {
     cf.modelID = malloc(sizeof(char*) *32);
-    smc = calloc(1, sizeof(struct applesmc *));
+    smc = calloc(1, sizeof(struct applesmc));
 }
 
 
@@ -153,6 +155,8 @@ int main(int argc, char *argv[])
 
         sleep(cf.pollingInterval);
     }
+
+    release_fans(smc);
 
     if (lock_fd != -1)
     {

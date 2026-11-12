@@ -69,6 +69,65 @@ int countFans(char *basePath)
 	return fancnt;
 }
 
+static int read_sysfs_int(const char *path, int *out)
+{
+    char buf[32];
+    int fd = open(path, O_RDONLY);
+    if (fd < 0)
+        return -1;
+    int n = read(fd, buf, sizeof(buf) - 1);
+    close(fd);
+    if (n < 1)
+        return -1;
+    buf[n] = 0;
+    *out = atoi(buf);
+    return 0;
+}
+
+/* Kernel >= 7.3 (T2 Macs): macsmc_hwmon. Attributes live directly in the
+ * hwmon directory and the hwmon "name" file identifies it. */
+static void find_macsmc_hwmon(struct applesmc *smc)
+{
+    DIR *d = opendir(HWMON_DIR);
+    struct dirent *e;
+    char p[PATH_MAX];
+    char name[64];
+
+    if (d == NULL)
+        return;
+
+    while ((e = readdir(d)) != NULL && smc->path[0] == 0)
+    {
+        if (e->d_name[0] == '.')
+            continue;
+
+        snprintf(p, sizeof(p), "%s/%s/name", HWMON_DIR, e->d_name);
+        int fd = open(p, O_RDONLY);
+        if (fd < 0)
+            continue;
+        int n = read(fd, name, sizeof(name) - 1);
+        close(fd);
+        if (n < 1)
+            continue;
+        name[n] = 0;
+        char *nl = strchr(name, '\n');
+        if (nl) *nl = 0;
+
+        if (strcmp(name, MACSMC_HWMON_ID) == 0)
+        {
+            snprintf(p, sizeof(p), "%s/%s", HWMON_DIR, e->d_name);
+            char *real = realpath(p, NULL);
+            if (real != NULL)
+            {
+                strlcpy(smc->path, real, PATH_MAX);
+                free(real);
+                smc->is_macsmc = true;
+            }
+        }
+    }
+    closedir(d);
+}
+
 void find_applesmc(struct applesmc *smc)
 {
     int i, ret, fd_name;
@@ -125,9 +184,13 @@ void find_applesmc(struct applesmc *smc)
         closedir(fd_dir);
     }
 
+    smc->is_macsmc = false;
+    if (smc->path[0] == 0)
+        find_macsmc_hwmon(smc);
+
     if (smc->path[0] == 0)
     {
-        printf("Error: Cannot find applesmc device.\n");
+        printf("Error: Cannot find applesmc or macsmc_hwmon device.\n");
         exit(-1);
     }
 
@@ -139,12 +202,33 @@ void find_applesmc(struct applesmc *smc)
 
         smc->fans[i].id = i + 1;
 
-        sprintf(path, "%s/fan%d_output", smc->path, i+1);
-        strlcpy(smc->fans[i].out_path, path, PATH_MAX);
+        if (smc->is_macsmc)
+        {
+            /* macsmc_hwmon: writing a value in [min,max] to fanN_target
+             * switches the fan to manual; writing 0 returns it to the SMC. */
+            sprintf(path, "%s/fan%d_target", smc->path, i+1);
+            strlcpy(smc->fans[i].out_path, path, PATH_MAX);
+            smc->fans[i].manual_path[0] = 0;
+        }
+        else
+        {
+            sprintf(path, "%s/fan%d_output", smc->path, i+1);
+            strlcpy(smc->fans[i].out_path, path, PATH_MAX);
 
-        sprintf(path, "%s/fan%d_manual", smc->path, i+1);
-        strlcpy(smc->fans[i].manual_path, path, PATH_MAX);
+            sprintf(path, "%s/fan%d_manual", smc->path, i+1);
+            strlcpy(smc->fans[i].manual_path, path, PATH_MAX);
+        }
+
+        smc->fans[i].hw_min = 0;
+        smc->fans[i].hw_max = 0;
+        sprintf(path, "%s/fan%d_min", smc->path, i+1);
+        read_sysfs_int(path, &smc->fans[i].hw_min);
+        sprintf(path, "%s/fan%d_max", smc->path, i+1);
+        read_sysfs_int(path, &smc->fans[i].hw_max);
     }
+
+    printf("Using %s at %s (%d fans)\n",
+           smc->is_macsmc ? MACSMC_HWMON_ID : APPLESMC_ID, smc->path, smc->fan_cnt);
 
     free(name_path);
 }
@@ -193,6 +277,25 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
             if (fp == NULL)
             {
                 printf("Error: cannot open %s\n", fname);
+            }
+            else if (smc->is_macsmc)
+            {
+                char label[256] = {0};
+                int n = fread(label, 1, sizeof(label) - 1, fp);
+                char *open_p = (n > 0) ? strrchr(label, '(') : NULL;
+                char *close_p = open_p ? strchr(open_p, ')') : NULL;
+
+                memset(smc->sensors[i].key, 0, SENSKEY_MAXLEN);
+                if (open_p && close_p && close_p > open_p + 1)
+                {
+                    int klen = min((int)(close_p - open_p - 1), SENSKEY_MAXLEN - 1);
+                    memcpy(smc->sensors[i].key, open_p + 1, klen);
+                }
+                else
+                {
+                    printf("Error: cannot parse label in %s\n", fname);
+                }
+                fclose(fp);
             }
             else
             {
@@ -277,6 +380,93 @@ void scan_sensors(struct applesmc *smc, struct mfdconfig cfg)
     free(key_buf);
 }
 
+/*
+ * External (non-SMC) sensors for per-fan fan_sensors lists, written as
+ * "<hwmon name>:<temp label>", e.g. "coretemp:Package id 0" or
+ * "amdgpu:junction". The SMC on T2 Macs has no usable CPU die or GPU
+ * junction sensor, so these are needed to track real load.
+ */
+#define MAX_EXT 16
+static struct { char spec[SENSKEY_MAXLEN]; char path[PATH_MAX]; bool warned; } ext[MAX_EXT];
+static int ext_cnt = 0;
+
+static void resolve_ext(const char *spec, char *out)
+{
+    char hw[SENSKEY_MAXLEN], p[PATH_MAX], buf[128];
+    const char *colon = strchr(spec, ':');
+    DIR *d;
+    struct dirent *e;
+
+    out[0] = 0;
+    if (!colon) return;
+    snprintf(hw, sizeof(hw), "%.*s", (int)(colon - spec), spec);
+    const char *label = colon + 1;
+
+    d = opendir(HWMON_DIR);
+    if (!d) return;
+    while ((e = readdir(d)) != NULL && out[0] == 0)
+    {
+        if (e->d_name[0] == '.') continue;
+        snprintf(p, sizeof(p), "%s/%s/name", HWMON_DIR, e->d_name);
+        FILE *f = fopen(p, "r");
+        if (!f) continue;
+        if (!fgets(buf, sizeof(buf), f)) { fclose(f); continue; }
+        fclose(f);
+        buf[strcspn(buf, "\n")] = 0;
+        if (strcmp(buf, hw) != 0) continue;
+
+        for (int t = 1; t < 64 && out[0] == 0; t++)
+        {
+            snprintf(p, sizeof(p), "%s/%s/temp%d_label", HWMON_DIR, e->d_name, t);
+            f = fopen(p, "r");
+            if (!f) continue;
+            if (fgets(buf, sizeof(buf), f))
+            {
+                buf[strcspn(buf, "\n")] = 0;
+                if (strcmp(buf, label) == 0)
+                    snprintf(out, PATH_MAX, "%s/%s/temp%d_input", HWMON_DIR, e->d_name, t);
+            }
+            fclose(f);
+        }
+    }
+    closedir(d);
+}
+
+/* Returns 1 and sets *val on success. */
+static int read_ext_sensor(const char *spec, float *val)
+{
+    int i, v;
+    for (i = 0; i < ext_cnt; i++)
+        if (strcmp(ext[i].spec, spec) == 0) break;
+
+    if (i == ext_cnt)
+    {
+        if (ext_cnt == MAX_EXT) return 0;
+        strlcpy(ext[i].spec, spec, SENSKEY_MAXLEN);
+        ext[i].warned = false;
+        ext_cnt++;
+        resolve_ext(spec, ext[i].path);
+        if (ext[i].path[0])
+            printf("External sensor %s -> %s\n", spec, ext[i].path);
+    }
+
+    if (ext[i].path[0] == 0 || read_sysfs_int(ext[i].path, &v) != 0)
+    {
+        /* hwmon numbering can change (e.g. module reload): re-resolve */
+        resolve_ext(spec, ext[i].path);
+        if (ext[i].path[0] == 0 || read_sysfs_int(ext[i].path, &v) != 0)
+        {
+            if (!ext[i].warned)
+                printf("Error: external sensor %s not found\n", spec);
+            ext[i].warned = true;
+            return 0;
+        }
+    }
+    ext[i].warned = false;
+    *val = v / 1000.0;
+    return 1;
+}
+
 void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
 {
     int i, j, k, cnt, avgcnt, sensorcnt;
@@ -290,6 +480,7 @@ void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
                 strlcpy(smc->sensors[i].name, cfg.profile->sensordesc[k].desc, strlen(cfg.profile->sensordesc[k].desc)+1);
         }
 
+        smc->sensors[i].valid = false;
         if (smc->sensors[i].blacklisted != true)
         {
             int fd = open(smc->sensors[i].fname, O_RDONLY);
@@ -309,7 +500,13 @@ void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
                 }
                 else
                 {
+                    val_buf[min(n, (int)sizeof(val_buf) - 1)] = 0;
+                    smc->sensors[i].valid = true;
                     smc->sensors[i].value = (float)atoi(val_buf) / 1000.0;
+                    /* macsmc exposes PECI-relative, trend and error keys that
+                     * are <= 0 or nonsense; never let them into averages. */
+                    if (smc->is_macsmc && (smc->sensors[i].value <= 0.0 || smc->sensors[i].value > 125.0))
+                        smc->sensors[i].valid = false;
                     if (smc->sensors[i].value <= 0.0 && smc->sensors[i].value != 0.0)
                         smc->sensors[i].value *= -1;
                 }
@@ -324,53 +521,82 @@ void read_sensors(struct applesmc *smc, struct mfdconfig cfg)
 
     for (i = 0; i < smc->sensor_cnt; i++)
     {
-        if (smc->sensors[i].blacklisted != true)
+        if (smc->sensors[i].blacklisted != true && smc->sensors[i].valid)
         {
             smc->temp_avg += smc->sensors[i].value;
             smc->active_sensors++;
         }
     }
 
-    smc->temp_avg = smc->temp_avg / smc->active_sensors;
+    if (smc->active_sensors > 0)
+        smc->temp_avg = smc->temp_avg / smc->active_sensors;
 
     for (i = 0; i < smc->fan_cnt; i++)
     {
+        /* Per-fan control uses the HOTTEST listed sensor: averaging a
+         * cool sensor with a hot one hides exactly the heat we react to. */
         tempavg = 0;
         avgcnt  = 0;
 
-        cnt = (cfg.fanctrl[i].sensor_cnt > 0) ? cfg.fanctrl[i].sensor_cnt : cfg.profile->fanctrl[i].sensor_cnt;
+        int use_cfg = cfg.fanctrl[i].sensor_cnt > 0;
+        cnt = use_cfg ? cfg.fanctrl[i].sensor_cnt : cfg.profile->fanctrl[i].sensor_cnt;
 
         for (j = 0; j < cnt; j++)
         {
-            if (cfg.fanctrl[i].sensor_cnt > 0)
+            const char *want = use_cfg ? cfg.fanctrl[i].sensors[j] : cfg.profile->fanctrl[i].sensors[j];
+            float v;
+
+            if (strchr(want, ':'))
             {
-                for (k = 0; k < MAXSENSORS; k++)
+                if (read_ext_sensor(want, &v))
                 {
-                    if (strcmp(cfg.fanctrl[i].sensors[j], smc->sensors[k].key) == 0 && smc->sensors[k].blacklisted != true)
-                    { 
-                        tempavg += smc->sensors[k].value;    
-                        avgcnt++;
-                    }
+                    if (avgcnt == 0 || v > tempavg) tempavg = v;
+                    avgcnt++;
                 }
+                continue;
             }
-            else
+
+            for (k = 0; k < smc->sensor_cnt; k++)
             {
-                for (k = 0; k < MAXSENSORS; k++)
+                if (strcmp(want, smc->sensors[k].key) == 0 && smc->sensors[k].blacklisted != true && smc->sensors[k].valid)
                 {
-                    if (strcmp(cfg.profile->fanctrl[i].sensors[j], smc->sensors[k].key) == 0 && smc->sensors[k].blacklisted != true)
-                    {
-                        tempavg += smc->sensors[k].value;
-                        avgcnt++;
-                    }
+                    v = smc->sensors[k].value;
+                    if (avgcnt == 0 || v > tempavg) tempavg = v;
+                    avgcnt++;
                 }
             }
         }
 
-        tempavg = tempavg / avgcnt;
-
-        if (tempavg <= 0.0 && tempavg != 0)
-            tempavg *= -1;
+        /* No readable sensor for this fan: fail hot, not cold. */
+        if (cnt > 0 && avgcnt == 0)
+        {
+            printf("Error: no readable sensors for fan %d, forcing max\n", i + 1);
+            tempavg = 200.0;
+        }
 
         smc->fans[i].sensor_avg = floor(tempavg);
     }
+}
+
+/* Hand the fans back to the SMC's own control (called on shutdown). */
+void release_fans(struct applesmc *smc)
+{
+    int i, fd;
+
+    for (i = 0; i < smc->fan_cnt; i++)
+    {
+        const char *p = smc->is_macsmc ? smc->fans[i].out_path : smc->fans[i].manual_path;
+        if (p[0] == 0)
+            continue;
+        fd = open(p, O_WRONLY);
+        if (fd < 0)
+        {
+            printf("Error: cannot release fan: %s\n", p);
+            continue;
+        }
+        if (write(fd, "0", 1) < 0)
+            printf("Error: cannot release fan: %s\n", p);
+        close(fd);
+    }
+    fflush(stdout);
 }

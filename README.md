@@ -1,5 +1,7 @@
 # macfand 
-Fan control daemon for Apple Computers running Linux through the applesmc kernel module.
+Fan control daemon for Apple Computers running Linux through the applesmc kernel module,
+or the macsmc_hwmon driver on Linux 7.3+ (T2 Macs such as the MacPro7,1; load it with
+`options macsmc_hwmon fan_control=1`).
 
 ## Configuration
 See the [Configuration](https://github.com/ablakely/macfand/wiki/Configuration) wiki page

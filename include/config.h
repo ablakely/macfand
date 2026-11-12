@@ -14,7 +14,8 @@
 
 #define HWMON_DIR		"/sys/class/hwmon"
 #define APPLESMC_ID		"applesmc"
-#define SENSKEY_MAXLEN	16
+#define MACSMC_HWMON_ID	"macsmc_hwmon"
+#define SENSKEY_MAXLEN	48
 #define MAXFANS         18
 #define MAXSENSORS      100
 #define MACHINESDIR     "/usr/local/macfand/machines"
@@ -44,6 +45,8 @@ struct mfdconfig
     int    temp_avg_ceiling;
     bool   use_avgctrl;
     int    pollingInterval;
+    int    rampdown_deadband;  /* ignore slow-downs smaller than this (RPM) */
+    int    rampdown_step;      /* max slow-down per poll (RPM), 0 = unlimited */
     char   blacklist[MAX_EXCLUDE][SENSKEY_MAXLEN];
     int    blacklist_cnt;
     struct fan_ctrl fanctrl[MAXFANS];
