@@ -17,6 +17,7 @@ EXEC=macfand
 BINFLAGS=-g -lconfig -lm
 ETC_DIR = /etc
 MACHINES_DIR = $(PREFIX)/macfand/machines
+.PHONY: all macfand clean install
 all: macfand
 
 macfand:
